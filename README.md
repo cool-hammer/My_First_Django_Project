@@ -20,7 +20,7 @@
      ![image-20200918012550611](README.assets/image-20200918012550611.png)
      `WARNING`은 pip 버전 경고이므로 무시해도 좋다
 
-2. Django 설치
+2. **Django 설치**
 
    - `pip install django`
 
@@ -33,19 +33,48 @@
 
      - 특정 버전 django 설치: `pip install django==3.0.8`
 
-3. .gitignore 생성
+3. **.gitignore 생성**
 
    [gitignore.io](https://www.toptal.com/developers/gitignore)에서 `django`, `visualstudiocode`, `python`, `venv` 키워드로 .gitignore 파일 생성
 
-4. requirements.txt 생성
+4. **requirements.txt 생성**
 
    - `pip freeze > requirements.txt`
 
      해당 프로젝트에 필요한 모듈, 패키지를 버전과 함께 기록
      ![image-20200918014205740](README.assets/image-20200918014205740.png)
 
-5. 프로젝트 생성
+5. **프로젝트 생성**
 
-   - `django-admin startproject 프로젝트명`
+   - `django-admin startproject 프로젝트명 .`
 
+     맨 뒤에 `.`(현재 경로라는 의미)를 붙이지 않으면 프로젝트명의 폴더를 만들고, 그 안에 프로젝트를 생성해준다.
+
+     여기서는 이미 프로젝트 명(my_first_djang_project)의 폴더에서 진행되기 때문에 따로 폴더를 더 만들지 않았다.
+     ![image-20200918015022840](README.assets/image-20200918015022840.png)
+
+   - `python manage.py runserver`
+
+     django 프로젝트가 잘 생성되었는지 서버를 실행시켜본다.
+     ![image-20200918015133527](README.assets/image-20200918015133527.png)
+
+     `http://127.0.0.1:8000/` 해당 url로 들어가면 django 프로젝트 화면을 볼 수 있다.
+     ![image-20200918015231944](README.assets/image-20200918015231944.png)
+
+   - 프로젝트 언어 및 지역(시간) 설정
+
+     프로젝트 폴더의 `settings.py` 파일에서 `LANGUAGE_CODE`와 `TIME_ZONE` 변수 값을 다음과 같이 설정
+
+     ```python
+     # settings.py
      
+     LANGUAGE_CODE = 'ko-kr'
+     
+     TIME_ZONE = 'Asia/Seoul'
+     ```
+
+     그러면 프로젝트 언어와 시간이 한국기준으로 바뀐다.
+     ![image-20200918015819143](README.assets/image-20200918015819143.png)
+
+## 2. Start APP
+
