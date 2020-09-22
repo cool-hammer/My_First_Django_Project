@@ -408,5 +408,127 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
     </form>
   ```
 
-  
+### READ
 
+#### index 페이지
+
+글을 작성했으면 이제 조회할 페이지를 만든다. articles 앱의 index 페이지에 모든 글의 목록을 보이도록 할 것이다.
+
+- urls.py에 index 페이지의 path로 `path('articles/', views.index)`를 추가한다.
+
+- views.py에 index 페이지를 render할 `index`함수를 작성한다.
+
+  ```python
+  def index(request):
+      articles = Article.objects.all()
+      
+      context = {
+          'articles': articles
+      }
+      
+      return render(request, 'index.html', context)
+  ```
+
+  `모델클래스.objects.all()`을 통해 모델의 모든 데이터를 불러올 수 있다.  
+  이를 페이지로 context에 딕셔너리로 담아서 넘기면 html에서 참조할 수 있다.
+
+- new.html
+
+  `index`함수에서 건네 받은 articles를 for 태그를 이용해서 렌더링 한다.
+
+  ```html
+  <h1>Index Page</h1>
+    {% for article in articles %}
+      <h3>{{ article.title }}</h3>
+      <hr>
+    {% endfor %}
+  </body>
+  ```
+
+- 결과
+
+  ![image-20200923023406263](README.assets/image-20200923023406263.png)
+
+- 이제 index 페이지가 만들어졌으니 create 함수의 리다이렉트 주소를 index의 url로 바꾸어준다.  
+  `redirect('/articles/')`
+
+- index 페이지에서 new 페이지로 갈 수 있도록 anchor 태그를 추가한다.  
+  그리고 new 페이지에서는 index 페이지로 돌아갈 수 있도록 anchor 태그를 추가한다.
+
+  - index.html
+
+    ```html
+    <nav>
+        <a href="/articles/new">New Page</a>
+    </nav>
+    ```
+
+    ![image-20200923024022017](README.assets/image-20200923024022017.png)
+
+  - new.html
+
+    ```html
+    <nav>
+        <a href="/articles/">Index Page</a>
+    </nav>
+    ```
+
+    ![image-20200923024038287](README.assets/image-20200923024038287.png)
+
+----
+
+#### detail 페이지
+
+글 모든 목록 조회를 만들었다면, 이번에는 선택된 글의 상세 조회 페이지를 만든다.  
+상세 조회 페이지에서는 글의 내용과 글의 작성 시간, 수정 시간을 조회할 수 있다.
+
+- urls.py에 상세페이지를 위한 url로 `path('/articles/<int:article_pk>', views.detail)`를 추가한다.
+
+  상세페이지는 특정한 글을 보여주는 것이므로 해당 글의 id(또는 pk)를 url에 포함 시켜야 한다.
+
+- views.py에 `detail` 함수를 작성한다.
+
+  ```python
+  def detail(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      context = {
+          'article': article,
+      }
+      
+      return render(request, 'detail.html', context)
+  ```
+
+  url로 넘겨지느 pk값은 views.py의 함수의 매개변수로 받아올 수 있다. **단, url의 이름과 매개변수의 이름이 동일해야 한다.**  
+  이렇게 넘겨 받은 pk값을 이용해 `모델클래스.objects.get(pk=값)`을 통해 데이터를 불러올 수 있다.
+
+- detail.html
+
+  ```html
+  <body>
+    <nav>
+      <a href="/articles/">Index Page</a>
+    </nav>
+    <h1>Detail Page</h1>
+    <hr>
+    <h3>제목 : {{ article.title }}</h3>
+    <p>내용 : {{ article.content }}</p>
+    <footer>
+      <p>작성일 : {{ article.created_at }}</p>
+      <p>수정일 : {{ article.modified_at }}</p>
+    </footer>
+  </body>
+  ```
+
+- 결과
+
+  ![image-20200923025454749](README.assets/image-20200923025454749.png)
+
+- 이제 index 페이지에서 글의 제목을 눌렀을 때 해당 글의 detail 페이지로 이동할 수 있도록  
+   `<h3><a href="/articles/{{ article.pk }}/">{{ article.title }}</a></h3>` 이렇게 index.html에서 글의 제목 부분을 수정한다.
+
+### UPDATE
+
+글의 수정 페이지를 만든다.
+
+- 수정 페이지를 요청할 url을 url.py에 `path('/articles/<int:article_pk>/edit', views.edit)`를 추가한다.
+- 
