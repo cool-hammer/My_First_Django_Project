@@ -187,12 +187,12 @@ admin.site.register(Article)
 
 ## 4. shell_plus
 
-## shell
+### shell
 
 django의 모델의 객체 조회, 생성, 수정, 삭제는 shell, 즉 CLI를 통해서도 수행할 수 있는데, `python manage.py shell`을 실행하면 된다.  
 
 
-## shell_plus란?
+### shell_plus란?
 
 shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 하는 불편함이 있다. 이러한 불편함을 해결하기 위해 `django_extensions`라는 패키지 앱의 `shell_plus`를 이용한다.
 
@@ -276,3 +276,137 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
 
   조회한 객체의 `.delete()`메소드를 호출하면 된다.  
   ![image-20200921001652432](README.assets/image-20200921001652432.png)
+
+## 5. CRUD
+
+### CREATE
+
+- my_first_django_project/urls.py
+
+  Article을 생성할 페이지의 url을 만든다.
+
+  ```python
+  from django.contrib import admin
+  from django.urls import path
+  from articles import views
+  
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('articles/new', views.new),
+      
+  ]
+  ```
+
+  - 주의할 점
+    - url이 `/~`로 시작되면 `/`은 루트를 의미
+
+- articles/views.py
+
+  생성 페이지를 렌더링할 함수 new
+
+  ```python
+  def new(request):
+      return render(request, 'new.html')
+  ```
+
+- articles/template/new.html
+
+  ```html
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>New Page</h1>
+    <form action="" method="post">
+      <label for="title">제목</label>
+      <input type="text" name="title">
+      <label for="content">내용</label>
+      <textarea name="content" cols="30" rows="10"></textarea>
+      <input type="submit" value="등록">
+    </form>
+  </body>
+  </html>
+  ```
+
+- 결과
+
+  ![image-20200922130344235](README.assets/image-20200922130344235.png)
+
+----
+
+아직 생성 페이지만 만들었고 '등록'을 눌러도 실제로 글이 저장되는 기능은 구현되어 있지 않다.
+
+- 글을 작성해서 form을 POST 요청으로 보낼 url로 `path('articles/create', views.create)`을 url.py에 추가한다.
+
+  ```python
+  from django.contrib import admin
+  from django.urls import path
+  from articles import views
+  
+  urlpatterns = [
+      path('admin/', admin.site.urls),
+      path('articles/new/', views.new),
+      path('articels/create/', views.create),	# 추가
+  ]
+  ```
+
+- views.py에 요청을 저장할 함수 `create()`를 작성
+
+  ```python
+  def create(request):
+      article = Article()
+      
+      title = request.POST.get('title')
+      content = request.POST.get('content')
+      
+      article.title = title
+      article.content = content
+      
+      article.save()
+      
+      return redirect('/articles/new/')
+  ```
+
+  글 저장이 잘 이루어지면 new 페이지로 리다이렉트 시킨다.  
+  원래는 조회 페이지나 index 페이지로 돌아가야하지만 아직 만들기 전이므로 new 페이지로 리다이렉트 시켰다.
+
+- 이제 new.html의 form의 action 속성값으로 create의 url을 넣어준다.
+
+  ```html
+  <form action="/articles/create/" method="post">
+      <label for="title">제목</label>
+      <input type="text" name="title">
+      <label for="content">내용</label>
+      <textarea name="content" cols="30" rows="10"></textarea>
+      <input type="submit" value="등록">
+  </form>
+  ```
+
+  여기서 url이 `/`으로 시작하면은 domain 루트 주소에 이어 붙어서 나오고, `/`없이 시작하면 현재 경로에 붙어서 나온다.  
+  예를 들어 `/articles/create/`의 경우 `127.0.0.1:8000/articles/create/`를 의미하지만  
+  `articles/create`는 `127.0.0.1:8000/articles/new/articles/create/`처럼 현재 경로 `~/new/`에 이어 붙이는 것을 의미한다.
+
+- 이제 글을 작성하고 등록을 누르면 CSRF 검증이 실패한다고 나온다.
+
+  ![image-20200923021526701](README.assets/image-20200923021526701.png)
+
+  이를 해결하기 위해서는 Django의 모든 form 태그 안에는 CSRF token을 넣어주어야 한다.  
+  form 태그 안에 `{% csrf_token %}`을 넣어주면 된다.
+
+  ```html
+  <form action="/articles/create/" method="post">
+      {% csrf_token %}
+      <label for="title">제목</label>
+      <input type="text" name="title">
+      <label for="content">내용</label>
+      <textarea name="content" cols="30" rows="10"></textarea>
+      <input type="submit" value="등록">
+    </form>
+  ```
+
+  
+
