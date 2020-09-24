@@ -528,7 +528,109 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
 
 ### UPDATE
 
+#### edit 페이지
+
 글의 수정 페이지를 만든다.
 
 - 수정 페이지를 요청할 url을 url.py에 `path('/articles/<int:article_pk>/edit', views.edit)`를 추가한다.
+
+- views.py에 `edit` 함수를 정의한다.
+
+  ```python
+  def edit(request, article_pk):
+      return render(request, 'edit.html')
+  ```
+
+- edit.html
+
+  ```html
+  <body>
+      <h1>Edit Page</h1>
+      <hr>
+  
+      <form action="" method="post">
+          {% csrf_token %}
+          <label for="title">제목</label>
+          <input type="text" name="title">
+          <label for="content">내용</label>
+          <textarea name="content" cols="30" rows="10"></textarea>
+      </form>
+  </body>
+  ```
+
+- 결과 사진
+
+  ![image-20200925012533252](README.assets/image-20200925012533252.png)
+
+  페이지는 잘 나오지만 문제가 있다.  
+  보통 수정 페이지는 수정하고자하는 글의 현재 상태가 보여져야하는데 input들이 빈 상태로 나온다. 이를 위해서 `edit` 함수에서 해당 글의 정보를 페이지에 넘겨주어야 한다.
+
+- 수정된 edit 함수
+
+  ```python
+  def edit(request, article_pk):
+      # 해당 글을 조회하여 context에 담아서 넘긴다
+      article = Article.objects.get(pk=article_pk)
+      context = {
+          'article': article
+      }
+      return render(request, 'edit.html', context)
+  ```
+
+- 수정된 edit.html
+
+  ```html
+  <body>
+      <h1>Edit Page</h1>
+      <hr>
+  
+      <form action="" method="post">
+          {% csrf_token %}
+          <label for="title">제목</label>
+          <input type="text" name="title" value="{{ article.title }}">
+          <label for="content">내용</label>
+          <textarea name="content" cols="30" rows="10">{{ article.content }}</textarea>
+          <input type="submit" value="수정">
+      </form>
+  </body>
+  ```
+
+- 수정된 결과 사진
+
+  ![image-20200925013014812](README.assets/image-20200925013014812.png)
+
+#### update 함수
+
+글의 수정 페이지는 만들었지만 수정 로직을 만들지는 않았기 때문에 수정 버튼이 작동하지 않는다. 
+
+- url.py에 글 수정 요청 url로 `path('articles/<int:article_pk>/update', views.update)`를 추가한다.
+
+- views.py에서 `update` 함수를 정의한다.
+
+  수정된 정보는 request.POST에 담겨있으므로 `request.POST.get()` 메소드로 불러온다.
+
+  ```python
+  def update(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      
+      title = request.POST.get('title')
+      content = request.POST.get('content')
+      
+      article.title = title
+      article.content = content
+      
+      article.save()
+      
+      return redirect(f'/articles/{article_pk}/')
+  ```
+
+- edit.html에서 form의 action 값을 update url로 수정한다.  
+  `<form action="/articles/update" method="post">`
+
+### DELETE
+
+글 삭제 로직을 작성한다. 글 삭제의 경우 삭제를 위한 페이지가 따로 존재하지 않고, detail 페이지에 삭제 버튼을 만들어 그것으로 삭제 요청을 보내도록 한다.
+
+- urls.py에 삭제 요청을 보낼 url로 `path('articles/<int:article_pk>/delete', views.delete)`을 추가한다.
 - 
+
