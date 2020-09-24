@@ -8,6 +8,7 @@
 <body>
   <nav>
     <a href="/articles/">Index Page</a>
+    <a href="/articles/new">New Page</a>
   </nav>
   <h1>Detail Page</h1>
   <hr>
@@ -17,5 +18,10 @@
     <p>작성일 : {{ article.created_at }}</p>
     <p>수정일 : {{ article.modified_at }}</p>
   </footer>
+
+  <form action="/articles/{{ article.pk }}/delete" method="post">
+    {% csrf_token %}
+    <input type="submit" value="삭제">
+  </form>
 </body>
 </html>

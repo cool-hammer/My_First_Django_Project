@@ -632,5 +632,26 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
 글 삭제 로직을 작성한다. 글 삭제의 경우 삭제를 위한 페이지가 따로 존재하지 않고, detail 페이지에 삭제 버튼을 만들어 그것으로 삭제 요청을 보내도록 한다.
 
 - urls.py에 삭제 요청을 보낼 url로 `path('articles/<int:article_pk>/delete', views.delete)`을 추가한다.
-- 
+
+- views.py에 `delete`함수를 정의한다.
+
+  ```python
+  def delete(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      article.delete()
+      return redirect('/articles/')
+  ```
+
+- detail.html에 삭제 버튼을 추가한다.
+
+  삭제는 DB의 내용을 수정하는 것이므로 POST 요청으로 보내야하 하므로 form태그를 이용한다.
+
+  ```html
+  <form action="/articles/{{ article.pk }}/delete" method="post">
+      {% csrf_token %}
+      <input type="submit" value="삭제">
+  </form>
+  ```
+
+  
 

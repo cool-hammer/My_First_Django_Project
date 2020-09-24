@@ -60,3 +60,9 @@ def update(request, article_pk):
     article.save()
     
     return redirect(f'/articles/{article.pk}/')
+
+
+def delete(request, article_pk):
+    article = Article.objects.get(pk=article_pk)
+    article.delete()
+    return redirect('/articles/')

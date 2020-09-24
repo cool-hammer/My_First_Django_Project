@@ -25,4 +25,5 @@ urlpatterns = [
     path('articles/<int:article_pk>/', views.detail),
     path('articles/<int:article_pk>/edit', views.edit),
     path('articles/<int:article_pk>/update', views.update),
+    path('articles/<int:article_pk>/delete', views.delete),
 ]
