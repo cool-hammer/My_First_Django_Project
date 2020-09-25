@@ -696,10 +696,54 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
        또는 값을 url의 변수 순서대로 넣으면 알아서 값이 매칭된다.  
        예를 들어, `<a href="{% url 'detail' article.pk %}">` 이렇게 작성하여도 무방한다.
 
+     - `redirect('detail', article_pk)`
+
+       동적 url로 리다이렉트 시에 넣을 변수 값을 매개변수로 넘긴다.
+
 2. url 중복 애로사항
 
    이렇게 프로젝트를 확장시켜 간다면 앱도 여러개가 되고, 각각의 앱들의 url들이 필요하다. 그러면 이 모든 url들을 urls.py에서 관리하게 되는데, 하나의 파일에 너무 많은 url들이 있어서 불편할 뿐더러 url의 name이 겹쳐 불편해질 수 있다.  
-   예를 들어, index 페이지가 articles라는 앱에만 존재한다는 보장이 없다. 여러 앱들이 index 페이지가 있을 것이고 그것들도 url 이름을 index라고 짓고 싶지만 articles의 index 페이지가 `index` url 이름을 사용하고 있으므로 다른 앱들의 index 페이지는 다른 url 이름을 사용해야 한다.
+   예를 들어, index 페이지가 articles라는 앱에만 존재한다는 보장이 없다. 여러 앱들이 index 페이지가 있을 것이고 그것들도 url 이름을 index라고 짓고 싶지만 articles의 index 페이지가 `index` url 이름을 사용하고 있으므로 다른 앱들의 index 페이지는 다른 url 이름을 사용해야 한다. **이를 해결하기 위해 url 분리 작업을 한다.**
 
-   - 이를 해결하기 위해 url 분리 작업을 한다.
+   - articles/urls.py
+
+     ```python
+     from django.urls import path
+     from . import views
+     
+     app_name = 'articles'
+     urlpatterns = [
+         path('new/', views.new, name='new'),
+         path('create/', views.create, name='create'),
+         path('', views.index, name='index'),
+         path('<int:article_pk>/', views.detail, name='detail'),
+         path('<int:article_pk>/edit', views.edit, name='edit'),
+         path('<int:article_pk>/update', views.update, name='update'),
+         path('<int:article_pk>/delete', views.delete, name='delete'),
+     ]
+     ```
+
+     articles 앱의 폴더에 urls.py 파일을 만들고, 해당 앱의 url들을 모두 옮겨온다. 이 때 `app_name` 변수를 앱의 이름인 `'articles'` 를 문자열 타입으로 선언한다.  
+     그리고 url 패턴에서 `articles/`을 제거한다. 이제 이 url 들은 앞에 명시가 되어 있지 않더라도 `articles/`로 시작하게 된다.
+
+   - my_first_django_project/urls.py
+
+     ```python
+     from django.contrib import admin
+     from django.urls import path, include
+     from articles import views
+     
+     urlpatterns = [
+         path('admin/', admin.site.urls),
+         path('articles/', include('articles.urls')),
+     ]
+     ```
+
+     이제 `articles/`로 시작하는 url 요청은 모두 `articles/urls.py`에서 찾도록  
+     `path('articles/', include('articles.urls'))` 이렇게 설정한다.
+
+   - 이렇게 url을 분리 후에 해당 url 들을 url 이름으로 참조할 때 항상 어느 앱의 url 이름인지 `앱이름:url이름` 형식으로 명시를 해주어야 한다. 
+
+     - `{% url 'index' %}` -> `{% url 'articles:index' %}`
+     - `redirect('index')` - >`redirect('articles:index')`
 

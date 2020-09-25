@@ -7,11 +7,11 @@
 </head>
 <body>
   <nav>
-    <a href="{% url 'index' %}">Index Page</a>
-    <a href="{% url 'new' %}">New Page</a>
+    <a href="{% url 'articles:index' %}">Index Page</a>
+    <a href="{% url 'articles:new' %}">New Page</a>
   </nav>
   <h1>New Page</h1>
-  <form action="{% url 'create' %}" method="post">
+  <form action="{% url 'articles:create' %}" method="post">
     {% csrf_token %}
     <label for="title">제목</label>
     <input type="text" name="title">

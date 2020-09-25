@@ -19,7 +19,7 @@ def create(request):
     
     article.save()
     
-    return redirect('index')
+    return redirect('articles:index')
 
 def index(request):
     articles = Article.objects.all()
@@ -59,10 +59,10 @@ def update(request, article_pk):
     
     article.save()
     
-    return redirect(f'/articles/{article.pk}/')
+    return redirect('articles:detail', article_pk)
 
 
 def delete(request, article_pk):
     article = Article.objects.get(pk=article_pk)
     article.delete()
-    return redirect('/articles/')
+    return redirect('articles:index')

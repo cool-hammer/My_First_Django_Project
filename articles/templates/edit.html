@@ -7,13 +7,13 @@
 </head>
 <body>
   <nav>
-    <a href="{% url 'index' %}">Index Page</a>
-    <a href="{% url 'new' %}">New Page</a>
+    <a href="{% url 'articles:index' %}">Index Page</a>
+    <a href="{% url 'articles:new' %}">New Page</a>
   </nav>
   <h1>Edit Page</h1>
   <hr>
 
-  <form action="{% url 'update' article_pk=article.pk %}" method="post">
+  <form action="{% url 'articles:update' article_pk=article.pk %}" method="post">
     {% csrf_token %}
     <label for="title">제목</label>
     <input type="text" name="title" value="{{ article.title }}">
