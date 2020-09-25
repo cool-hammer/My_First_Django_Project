@@ -19,7 +19,7 @@ def create(request):
     
     article.save()
     
-    return redirect('/articles/')
+    return redirect('index')
 
 def index(request):
     articles = Article.objects.all()

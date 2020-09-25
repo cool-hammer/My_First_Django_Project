@@ -653,5 +653,53 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
   </form>
   ```
 
-  
+## 6. 문제점 및 해결방법
+
+### (1) url에 대한 문제점
+
+1. url 수정 애로사항
+
+   url.py에 등록한 각각의 url들은 여러 템플릿과 뷰함수에 쓰인다.  
+   예를 들어, index 페이지의 url `articles/`는 모든 페이지 html 파일의 네비게이션에 작성되어 있고, index 페이지를 렌더링 또는 index 페이지로 리다이렉트 시키는 모든 뷰 함수에서 사용된다.  
+   만일 이 상황에서 url을 수정해야하는 상황이 생긴다면 이 url을 참조하고 있는 모든 곳을 수정해야하는 상황이 발생한다.
+
+   - 이를 위해 url에 이름을 부여하여 그 이름을 url로 대신할 수 있다. 마치 url을 변수에 담아서 사용하는 것과 같다.
+
+   - 변수에 이름을 넣기 위해서 path에 `name` 키워드 인자를 추가하면 된다.
+
+   - url들에 이름을 추가한 urls.py
+
+     ```python
+     urlpatterns = [
+         path('admin/', admin.site.urls),
+         path('articles/new/', views.new, name='new'),
+         path('articles/create/', views.create, name='create'),
+         path('articles/', views.index, name='index'),
+         path('articles/<int:article_pk>/', views.detail, name='detail'),
+         path('articles/<int:article_pk>/edit', views.edit, name='edit'),
+         path('articles/<int:article_pk>/update', views.update, name='update'),
+         path('articles/<int:article_pk>/delete', views.delete, name='delete'),
+     ]
+     ```
+
+   - 이제는 index 페이지의 url, `/articles/` 대신에 `index`라는 이름을 사용하면 된다.
+
+     - `rediect('/articles/')` -> `redirect('index')`
+
+     - `<a href="/articels/">` -> `<a href="{% url 'index' %}"`
+
+       html에서는 `{% url %}` 장고 템플릿 언어를 사용한다.
+
+     - `<a href="/articles/{{ article.pk }}/">` -> `<a href=" {% url 'detail' article_pk=article.pk %}"`
+
+       동적 url의 경우, `변수 명=값`을 명시해준다. 이때, 공백이 있어서는 안 된다. 예를 들어 `article_pk = article.pk`는 파싱 에러가 발생한다.  
+       또는 값을 url의 변수 순서대로 넣으면 알아서 값이 매칭된다.  
+       예를 들어, `<a href="{% url 'detail' article.pk %}">` 이렇게 작성하여도 무방한다.
+
+2. url 중복 애로사항
+
+   이렇게 프로젝트를 확장시켜 간다면 앱도 여러개가 되고, 각각의 앱들의 url들이 필요하다. 그러면 이 모든 url들을 urls.py에서 관리하게 되는데, 하나의 파일에 너무 많은 url들이 있어서 불편할 뿐더러 url의 name이 겹쳐 불편해질 수 있다.  
+   예를 들어, index 페이지가 articles라는 앱에만 존재한다는 보장이 없다. 여러 앱들이 index 페이지가 있을 것이고 그것들도 url 이름을 index라고 짓고 싶지만 articles의 index 페이지가 `index` url 이름을 사용하고 있으므로 다른 앱들의 index 페이지는 다른 url 이름을 사용해야 한다.
+
+   - 이를 해결하기 위해 url 분리 작업을 한다.
 

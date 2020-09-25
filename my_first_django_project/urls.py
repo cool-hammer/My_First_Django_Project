@@ -19,11 +19,11 @@ from articles import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('articles/new/', views.new),
-    path('articles/create/', views.create),
-    path('articles/', views.index),
-    path('articles/<int:article_pk>/', views.detail),
-    path('articles/<int:article_pk>/edit', views.edit),
-    path('articles/<int:article_pk>/update', views.update),
-    path('articles/<int:article_pk>/delete', views.delete),
+    path('articles/new/', views.new, name='new'),
+    path('articles/create/', views.create, name='create'),
+    path('articles/', views.index, name='index'),
+    path('articles/<int:article_pk>/', views.detail, name='detail'),
+    path('articles/<int:article_pk>/edit', views.edit, name='edit'),
+    path('articles/<int:article_pk>/update', views.update, name='update'),
+    path('articles/<int:article_pk>/delete', views.delete, name='delete'),
 ]
