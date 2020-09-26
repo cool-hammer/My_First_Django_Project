@@ -1,27 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <nav>
-    <a href="{% url 'articles:index' %}">Index Page</a>
-    <a href="{% url 'articles:new' %}">New Page</a>
-  </nav>
-  <h1>Detail Page</h1>
-  <hr>
-  <h3>제목 : {{ article.title }}</h3>
-  <p>내용 : {{ article.content }}</p>
-  <footer>
-    <p>작성일 : {{ article.created_at }}</p>
-    <p>수정일 : {{ article.modified_at }}</p>
-  </footer>
-  <a href="{% url 'articles:edit' article_pk=article.pk %}">수정</a>
-  <form action="{% url 'articles:delete' article_pk=article.pk %}" method="post">
-    {% csrf_token %}
-    <input type="submit" value="삭제">
-  </form>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Detail Page</h1>
+<hr>
+<h3>제목 : {{ article.title }}</h3>
+<p>내용 : {{ article.content }}</p>
+<footer>
+  <p>작성일 : {{ article.created_at }}</p>
+  <p>수정일 : {{ article.modified_at }}</p>
+</footer>
+<a href="{% url 'articles:edit' article_pk=article.pk %}">수정</a>
+<form action="{% url 'articles:delete' article_pk=article.pk %}" method="post">
+  {% csrf_token %}
+  <input type="submit" value="삭제">
+</form>
+{% endblock content %}

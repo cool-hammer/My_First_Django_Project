@@ -1,19 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <nav>
-    <a href="{% url 'articles:index' %}">Index Page</a>
-    <a href="{% url 'articles:new' %}">New Page</a>
-  </nav>
+{% extends 'base.html' %}
+{% block content %}
   <h1>Index Page</h1>
   {% for article in articles %}
     <h3><a href="{% url 'articles:detail' article_pk=article.pk %}">{{ article.title }}</a></h3>
     <hr>
   {% endfor %}
-</body>
-</html>
+{% endblock content %}

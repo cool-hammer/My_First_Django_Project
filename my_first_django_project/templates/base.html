@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <nav>
+    <a href="{% url 'articles:index' %}">Index Page</a>
+    <a href="{% url 'articles:new' %}">New Page</a>
+  </nav>
+  {% block content %}
+  {% endblock content %}
+</body>
+</html>

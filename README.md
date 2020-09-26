@@ -747,3 +747,78 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
      - `{% url 'index' %}` -> `{% url 'articles:index' %}`
      - `redirect('index')` - >`redirect('articles:index')`
 
+### (2) Template에 대한 문제점
+
+템플릿의 가장 큰 문제점은 중복이 많다는 점이다. 예를 들어, 네비게이션은 모든 페이지에 똑같이 존재하기 때문에 모든 템플릿 html 파일에 작성해주어야 한다. 2~3 페이지라면 문제가 되지 않겠지만 수십, 수백 페이지라면, 그 모든 페이지에 복사해서 붙여 넣기란 귀찮기 짝이 없다.  
+더 큰 문제는 수정이다. 우리가 이미 위에서 url 수정 작업을 거쳤는데 고작 4 페이지를 수정하는 데에도 많은 부분을 수정해야 했다. 왜냐하면 모든 페이지에 거의 같은 코드가 쓰였기 때문이다.
+
+#### 템플릿 상속
+
+모든 페이지에 있어야 할 요소들을 가지고 있는 **액자 같은 틀의 역할**을 하는 템플릿을 만들고, 그 템플릿 안에 다른 템플릿을 끼워 넣을 수 있는 기능을 말한다.
+
+- 부모 템플릿 파일을 프로젝트 내에 만든다.  
+  본인의 경우 ``/my_first_django_project/templates/base.html` 에 만들었다.
+
+  ```html
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+  <body>
+    <nav>
+      <a href="{% url 'articles:index' %}">Index Page</a>
+      <a href="{% url 'articles:new' %}">New Page</a>
+    </nav>
+    {% block content %}
+    {% endblock content %}
+  </body>
+  </html>
+  ```
+
+  모든 페이지에 공통으로 있어야 할 부분들 `html`, `head`, `body`, `nav` 태그만 작성하고, 다른 템플릿의 내용이 담길 공간에 `{% block 블록이름 %}{% endblock 블록이름 %}`을 작성한다.
+
+- 이제 부모 템플릿을 참조할 수 있도록 이 경로를 settings.py에 등록해야한다.
+
+  ```python
+  TEMPLATES = [
+      {
+          'BACKEND': 'django.template.backends.django.DjangoTemplates',
+          'DIRS': [BASE_DIR / 'my_first_django_project' / 'templates'], # 여기
+          'APP_DIRS': True,
+          'OPTIONS': {
+              'context_processors': [
+                  'django.template.context_processors.debug',
+                  'django.template.context_processors.request',
+                  'django.contrib.auth.context_processors.auth',
+                  'django.contrib.messages.context_processors.messages',
+              ],
+          },
+      },
+  ]
+  ```
+
+  여기서 `BASE_DIR`은 프로젝트의 뿌리(?) 경로로 settings.py 내에서 기본적으로  
+  `BASE_DIR = Path(__file__).resolve().parent.parent`  
+  이렇게 정의 되어 있다. 이를 중심으로 적절히 경로를 추가하여 부모 템플릿이 담긴 경로를 작성해준다.
+  
+- 이제 각각의 페이지 템플릿을 상속을 이용해 수정한다.  
+  상속 받고자 하는 템플릿을 `{% extends '템플릿' %}`으로 추가하고 그 부모 템플릿의 block에 들어갈 내용을 작성하면 된다.
+
+  - index.html
+
+    ```html
+    {% extends 'base.html' %}
+    {% block content %}
+      <h1>Index Page</h1>
+      {% for article in articles %}
+        <h3><a href="{% url 'articles:detail' article_pk=article.pk %}">{{ article.title }}</a></h3>
+        <hr>
+      {% endfor %}
+    {% endblock content %}
+    ```
+
+- 
+
