@@ -820,5 +820,75 @@ shell의 경우에는 그에 관련된 모듈을 일일이 import 해주어야 �
     {% endblock content %}
     ```
 
-- 
+#### 동적 템플릿
+
+new 페이지와 edit 페이지는 사실 상 같은 형태고, 안의 내용이 채워져 있냐 없냐와 버튼이 수정인가 새 글 작성인가의 차이 뿐이다. 같은 탬플릿을 이용해 요청된 url에 따라 안의 내용을 달리 해보자.
+
+- edit.html
+
+  `{{ request.resolver_match.url_name }}`을 통해서 현재의 url 이름을 알 수 있고, 이를 이용해서 if-elif 태그를 통해 url 이름에 따라 다르게 렌더링 할 수 있다.
+
+  ```html
+  {% extends 'base.html' %}
+  
+  {% block content %}
+  
+  {% if request.resolver_match.url_name == 'new' %}
+  <h1>New Page</h1>
+  {% elif request.resolver_match.url_name == 'edit' %}
+  <h1>Edit Page</h1>
+  {% endif %}
+  
+  <hr>
+  
+  {% if request.resolver_match.url_name == 'new' %}
+  <form action="{% url 'articles:create' %}" method="post">
+  {% elif request.resolver_match.url_name == 'edit'%}
+  <form action="{% url 'articles:update' article_pk=article.pk %}" method="post">
+  {% endif %}
+    {% csrf_token %}
+    <label for="title">제목</label>
+    <input type="text" name="title" value="{{ article.title }}">
+    <label for="content">내용</label>
+    <textarea name="content" cols="30" rows="10">{{ article.content }}</textarea>
+    <input type="submit" value="수정">
+  </form>
+  {% endblock content %}
+  ```
+
+- 이제 new.html 파일은 필요 없으므로 삭제해도 된다.
+
+### (3) 뷰 함수에 대한 문제점
+
+새글 작성과 글 수정의 경우 페이지를 렌더링 하는 함수와 DB에 저장 또는 수정하는 함수가 따로 작성되어 있다. 하지만 페이지 요청은 GET, DB 조작은 POST로 요청 메소드가 나뉘어져 있기 때문에 하나의 뷰 함수에서 요청에 따라 다른 로직이 수행되도록 한다면 함수를 하나만 작성하면 된다. 이렇게 되면 url도 두 개로 나뉠 필요 없이 하나만 사용할 수 있다.  
+즉, 하나의 url이 GET이냐 POST냐에 따라 다르게 응답하게 한다는 것이다.
+
+- new와 create를 병합
+
+  ```python
+  def create(request):
+      
+      if request.method == 'POST':
+          article = Article()
+          
+          title = request.POST.get('title')
+          content = request.POST.get('content')
+          
+          article.title = title
+          article.content = content
+          
+          article.save()
+          
+          return redirect('articles:index')
+      
+      return render(request, 'edit.html')
+  ```
+
+- edit과 update 병합
+
+  ```python
+  
+  ```
+
+  
 

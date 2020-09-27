@@ -5,10 +5,11 @@ from .models import Article
 # Create your views here.
 
 def new(request):
-    return render(request, 'new.html')
+    return render(request, 'edit.html')
 
 
 def create(request):
+    
     article = Article()
     
     title = request.POST.get('title')
