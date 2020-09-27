@@ -1154,5 +1154,110 @@ forms.Form을 상속 받을 때는 필드들을 일일이 정의해야 하지만
             return redirect('articles:detail', article_pk)
     ```
 
-    
 
+## 8. accounts
+
+회원 가입, 로그인, 로그아웃 등의 계정 관리 앱을 만들어보자.
+
+### 앱 생성
+
+이를 위한 `accounts`라는 앱을 다음 명령으로 생성한다.
+
+`python manage.py startapp accounts`
+
+**앱 생성 후, 반드시 settings.py에 등록하는 것을 잊지 말자!**
+
+앱의 기능을 본격적으로 구현하기 전에 먼저 url 분리를 먼저 해준다.  
+프로젝트의 urls.py에 `path('accounts/', include('accounts.urls'))`를 추가하고, accounts/urls.py 를 만들고 내용을 다음과 같이 작성한다.
+
+```python
+from django.urls import path
+
+app_name = 'accounts'
+urlpatterns = []
+
+```
+
+### 회원 가입
+
+무언가를 DB에 저장할려면 어떤 스키마로 저장할지 모델이 있어야 한다. 계정의 경우도 User 모델이 필요한데, 이는 Django에서 이미 내장되어 있는 User 모델이 있다. 이것을 사용하도록 한다.
+
+그리고 회원 가입을 위한 폼도 필요한데, 이 역시 Django에서 `UserCreationForm`이라고 이미 만들어진 폼을 제공한다. 이를 사용할 것이다.
+
+- 회원 가입 요청 url로 `path('signup', views.signup, name='signup')`을 추가한다.
+
+- views.py에 signup 함수를 정의한다. 이때, signup 함수는 회원 가입 페이지에 대한 요청(GET)과 회원 생성 요청(POST) 둘 다 처리하도록 로직을 구성 할 것이다. 일단은 GET 부터 작성 후 POST인 경우는 비어 두도록 한다.
+
+  ```python
+  def signup(request):
+      if request.method == 'POST':
+          pass
+      else:
+          user_creation_form = UserCreationForm()
+      
+      context = {
+          'user_creation_form': user_creation_form
+      }
+      
+      return render(request, 'signup.html', context)
+  ```
+
+- accounts/templates/signup.html
+
+  ```html
+  {% extends 'base.html' %}
+  {% block content %}
+  <h2>Sign Up Page</h2>
+  <hr>
+  
+  <form action="" method="post">
+    {% csrf_token %}
+    {{ user_creation_form.as_p }}
+    <input type="submit" value="회원가입">
+  </form>
+  {% endblock content %}
+  ```
+
+  **POST 요청일 때는 `{% csrf_token %}`을 잊지 말자!**
+
+- 결과
+
+  ![image-20200928001229358](README.assets/image-20200928001229358.png)
+
+  이미 만들어진 UserCreationForm만 사용해도 꼭 필요한 요소들은 다 들어있다.
+
+- 이제 signup 함수에서 POST 요청 로직을 마무리해보자.   
+  사실 articles에서 했던 것과 차이가 없다.
+
+  ```python
+  from django.contrib.auth.forms import UserCreationForm
+  
+  def signup(request):
+      if request.method == 'POST':
+          user_creation_form = UserCreationForm(request.POST)
+          
+          if user_creation_form.is_valid():
+              user_creation_form.save()
+              return redirect('articles:index')
+      else:
+          user_creation_form = UserCreationForm()
+  
+      context = {
+          'user_creation_form': user_creation_form
+      }
+  
+      return render(request, 'signup.html', context)
+  ```
+
+- 회원가입을 시도하고 계정이 만들어졌는지 확인하기 위해 admin 페이지로 가서 확인한다.
+
+  ![image-20200928002254782](README.assets/image-20200928002254782.png)
+
+  새로운 사용자가 잘 만들어져 있다.
+
+### 로그인
+
+로그인을 위한 폼도 djagno에서 `AuthenticationForm`이라고 제공한다.
+
+- 로그인 url로 `path('login/', views.py, name='login')`을 추가한다.
+- views.py에 login 함수를 정의한다. 
