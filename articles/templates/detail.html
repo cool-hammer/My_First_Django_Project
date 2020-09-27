@@ -9,7 +9,7 @@
   <p>작성일 : {{ article.created_at }}</p>
   <p>수정일 : {{ article.modified_at }}</p>
 </footer>
-<a href="{% url 'articles:edit' article_pk=article.pk %}">수정</a>
+<a href="{% url 'articles:update' article_pk=article.pk %}">수정</a>
 <form action="{% url 'articles:delete' article_pk=article.pk %}" method="post">
   {% csrf_token %}
   <input type="submit" value="삭제">

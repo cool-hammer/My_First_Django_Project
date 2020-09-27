@@ -4,17 +4,13 @@
 
 {% if request.resolver_match.url_name == 'new' %}
 <h1>New Page</h1>
-{% elif request.resolver_match.url_name == 'edit' %}
+{% elif request.resolver_match.url_name == 'update' %}
 <h1>Edit Page</h1>
 {% endif %}
 
 <hr>
 
-{% if request.resolver_match.url_name == 'new' %}
-<form action="{% url 'articles:create' %}" method="post">
-{% elif request.resolver_match.url_name == 'edit'%}
-<form action="{% url 'articles:update' article_pk=article.pk %}" method="post">
-{% endif %}
+<form action="" method="post">
   {% csrf_token %}
   <label for="title">제목</label>
   <input type="text" name="title" value="{{ article.title }}">

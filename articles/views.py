@@ -4,23 +4,23 @@ from django.shortcuts import (
 from .models import Article
 # Create your views here.
 
-def new(request):
-    return render(request, 'edit.html')
-
 
 def create(request):
     
-    article = Article()
+    if request.method == 'POST':
+        article = Article()
+        
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        
+        article.title = title
+        article.content = content
+        
+        article.save()
+        
+        return redirect('articles:index')
     
-    title = request.POST.get('title')
-    content = request.POST.get('content')
-    
-    article.title = title
-    article.content = content
-    
-    article.save()
-    
-    return redirect('articles:index')
+    return render(request, 'edit.html')
 
 def index(request):
     articles = Article.objects.all()
@@ -41,26 +41,27 @@ def detail(request, article_pk):
     
     return render(request, 'detail.html', context)
 
-def edit(request, article_pk):
-    article = Article.objects.get(pk=article_pk)
-    context = {
-        'article': article
-    }
-    return render(request, 'edit.html', context)
-
 
 def update(request, article_pk):
     article = Article.objects.get(pk=article_pk)
     
-    title = request.POST.get('title')
-    content = request.POST.get('content')
+    if request.method == 'POST':
+        
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        
+        article.title = title
+        article.content = content
+        
+        article.save()
+        
+        return redirect('articles:detail', article_pk)
     
-    article.title = title
-    article.content = content
+    context = {
+        'article': article
+    }
+    return render(request, 'edit.html', context)
     
-    article.save()
-    
-    return redirect('articles:detail', article_pk)
 
 
 def delete(request, article_pk):

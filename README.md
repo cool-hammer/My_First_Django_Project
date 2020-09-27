@@ -887,7 +887,40 @@ new 페이지와 edit 페이지는 사실 상 같은 형태고, 안의 내용이
 - edit과 update 병합
 
   ```python
-  
+  def update(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      
+      if request.method == 'POST':
+          
+          title = request.POST.get('title')
+          content = request.POST.get('content')
+          
+          article.title = title
+          article.content = content
+          
+          article.save()
+          
+          return redirect('articles:detail', article_pk)
+      
+      context = {
+          'article': article
+      }
+      return render(request, 'edit.html', context)
+  ```
+
+- 이제 'new', 'edit' url은 필요 없어졌으므로 urls.py 에서 제거한다. 
+
+- 그리고 작성 form에서 action은 이제 지금의 url로 post 요청을 보내면 새글 추가(create) 또는 수정(update) 가 될 것이므로 `action=""` 으로 고쳐준다. url 이름에 따라 action 값을 나눌 필요도 없어졌다.
+
+  ```html
+  <form action="" method="post">
+    {% csrf_token %}
+    <label for="title">제목</label>
+    <input type="text" name="title" value="{{ article.title }}">
+    <label for="content">내용</label>
+    <textarea name="content" cols="30" rows="10">{{ article.content }}</textarea>
+    <input type="submit" value="수정">
+  </form>
   ```
 
   
