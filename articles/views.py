@@ -7,63 +7,63 @@ from .forms import ArticleForm
 
 
 def create(request):
-    
+
     if request.method == 'POST':
         article_form = ArticleForm(request.POST)
-        
+
         if article_form.is_valid():
             article_form.save()
             return redirect('articles:index')
     else:
         article_form = ArticleForm()
-    
+
     context = {
         'article_form': article_form,
     }
-    
+
     return render(request, 'edit.html', context)
+
 
 def index(request):
     articles = Article.objects.all()
-    
+
     context = {
         'articles': articles
     }
-    
+
     return render(request, 'index.html', context)
 
 
 def detail(request, article_pk):
     article = Article.objects.get(pk=article_pk)
-    
+
     context = {
         'article': article,
     }
-    
+
     return render(request, 'detail.html', context)
 
 
 def update(request, article_pk):
     article = Article.objects.get(pk=article_pk)
-    
+
     if request.method == 'POST':
-        
+
         article_form = ArticleForm(request.POST, instance=article)
-        
+
         if article_form.is_valid():
             article_form.save()
-            
+
             return redirect('articles:detail', article_pk)
     else:
         article_form = ArticleForm(instance=article)
-    
+
     context = {
         'article': article,
         'article_form': article_form,
     }
-    
+
     return render(request, 'edit.html', context)
-    
 
 
 def delete(request, article_pk):
