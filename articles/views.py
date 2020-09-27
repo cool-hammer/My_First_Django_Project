@@ -2,6 +2,7 @@ from django.shortcuts import (
     render, redirect
 )
 from .models import Article
+from .forms import ArticleForm
 # Create your views here.
 
 
@@ -9,18 +10,26 @@ def create(request):
     
     if request.method == 'POST':
         article = Article()
+        article_form = ArticleForm(request.POST)
         
-        title = request.POST.get('title')
-        content = request.POST.get('content')
-        
-        article.title = title
-        article.content = content
-        
-        article.save()
-        
-        return redirect('articles:index')
+        if article_form.is_valid():
+            
+            cleaned_data = article_form.cleaned_data
+            
+            article.title = cleaned_data['title']
+            article.content = cleaned_data['content']
+            
+            article.save()
+            
+            return redirect('articles:index')
+    else:
+        article_form = ArticleForm()
     
-    return render(request, 'edit.html')
+    context = {
+        'article_form': article_form,
+    }
+    
+    return render(request, 'edit.html', context)
 
 def index(request):
     articles = Article.objects.all()
@@ -47,19 +56,29 @@ def update(request, article_pk):
     
     if request.method == 'POST':
         
-        title = request.POST.get('title')
-        content = request.POST.get('content')
+        article_form = ArticleForm(request.POST)
         
-        article.title = title
-        article.content = content
-        
-        article.save()
-        
-        return redirect('articles:detail', article_pk)
+        if article_form.is_valid():
+            cleaned_data = article_form.cleaned_data
+            
+            article.title = cleaned_data['title']
+            article.content = cleaned_data['content']
+            
+            article.save()
+            
+            return redirect('articles:detail', article_pk)
+    else:
+        data = {
+            'title': article.title,
+            'content': article.content,
+        }
+        article_form = ArticleForm(data=data)
     
     context = {
-        'article': article
+        'article': article,
+        'article_form': article_form,
     }
+    
     return render(request, 'edit.html', context)
     
 

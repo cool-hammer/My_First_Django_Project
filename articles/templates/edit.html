@@ -2,7 +2,7 @@
 
 {% block content %}
 
-{% if request.resolver_match.url_name == 'new' %}
+{% if request.resolver_match.url_name == 'create' %}
 <h1>New Page</h1>
 {% elif request.resolver_match.url_name == 'update' %}
 <h1>Edit Page</h1>
@@ -12,10 +12,7 @@
 
 <form action="" method="post">
   {% csrf_token %}
-  <label for="title">제목</label>
-  <input type="text" name="title" value="{{ article.title }}">
-  <label for="content">내용</label>
-  <textarea name="content" cols="30" rows="10">{{ article.content }}</textarea>
+  {{ article_form.as_p }}
   <input type="submit" value="수정">
 </form>
 {% endblock content %}

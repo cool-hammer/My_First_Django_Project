@@ -923,5 +923,164 @@ new 페이지와 edit 페이지는 사실 상 같은 형태고, 안의 내용이
   </form>
   ```
 
+## 7. Form
+
+### forms.Form
+
+Django 에서는 자주 쓰이는 form의 경우 form 클래스를 만들어서 재사용할 수 있는 기능을 제공한다. 현재 글 작성 폼을 이것으로 대체해보자.
+
+- articles/forms.py 파일을 만들고 form 클래스를 정의한다.
+
+  ```python
+  from django import forms
   
+  class ArticleForm(forms.Form):
+      title = forms.CharField(max_length=50)
+      content = forms.CharField(widget=forms.Textarea)
+      
+  ```
+
+  모델 클래스를 만들 때와 비슷하게 forms.Form을 상속 받고, 각각의 input 필드를 정의한다.  
+  `title = forms.CharField(max_length=50)` 의 경우  
+  `<input type="text" name="title" maxlength="50">`와 대응된다.  
+  필드 변수 명이 태그의 name 속성이 된다.  
+  `<textarea>` 태그와 대응되는 필드는 따로 존재하지 않고 CharField에서 widget으로 설정해 주어야 한다.  
+  `forms.CharField(widget=forms.Textarea)`
+
+- 해당 form 클래스를 페이지에서 사용할려면 view 함수에서 인스턴스를 생성하고 이를 페이지로 context에 담아서 넘겨주어야 한다.
+
+  ```python
+  def create(request):
+      
+      if request.method == 'POST':
+          article = Article()
+          
+          title = request.POST.get('title')
+          content = request.POST.get('content')
+          
+          article.title = title
+          article.content = content
+          
+          article.save()
+          
+          return redirect('articles:index')
+      
+      article_form = ArticleForm()
+      
+      context = {
+          'article_form': article_form,
+      }
+      
+      return render(request, 'edit.html', context)
+  ```
+
+- edit.html
+
+  ```html
+  <form action="" method="post">
+    {% csrf_token %}
+    {{ article_form }}
+    <input type="submit" value="수정">
+  </form>
+  ```
+
+  이제 각각의 태그들을 일일이 작성할 필요 없이 form 객체를 렌더링 시키면 된다.
+
+- 결과
+
+  ![image-20200927152711004](README.assets/image-20200927152711004.png)
+
+- label 이름을 바꾸고자 하면 필드들에 `label='라벨명'`의 키워드 인자를 넣으면 된다. 없으면 기본 값으로 필드 변수 명으로 사용된다.
+
+- 수정 페이지의 경우 원래의 제목과 내용을 form에 채워진 상태로 렌더링 되어야한다.  
+  이러한 경우에는 form 객체를 생성시 첫 번째 위치 인자로 data 인자를 넘겨주어야 한다. 이때 data는 딕셔너리 객체여야 한다.
+
+  ```python
+  def update(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      
+      if request.method == 'POST':
+          
+          title = request.POST.get('title')
+          content = request.POST.get('content')
+          
+          article.title = title
+          article.content = content
+          
+          article.save()
+          
+          return redirect('articles:detail', article_pk)
+      
+      # form에 넣어줄 data
+      data = {
+          'title': article.title,
+          'content': article.content,
+      }
+      
+      # data를 통해 form을 만듬
+      article_form = ArticleForm(data=data)
+      
+      context = {
+          'article': article,
+          'article_form': article_form,
+      }
+      
+      return render(request, 'edit.html', context)
+  ```
+
+- form을 좀 더 자연스럽게 출력할려면 `{{ form.as_p }}`를 사용하는 편이 좋다.  
+
+  그러면 필드들이 p 태그로 감싸져서 나온다.  
+  ![image-20200927154235283](README.assets/image-20200927154235283.png)
+
+  이 외에도 `.as_table`, `.as_ul` 등이 있다.
+
+- 아직은 GET 요청일 때만 해결된 상태다. 즉, form을 보여주는데에만 사용했지 입력을 받아서 DB에 저장하는데에 아직 form 클래스를 사용하지 않았다.  
+
+  form에 사용자가 입력한 정보를 담기 위해선 생성시에 request.POST를 넘겨주어야 한다. `article_form = ArticleForm(request.POST)`
+
+  이후 form 클래스를 이용할 때 가장 좋은 점은 `is_valid()` 메소드를 호출하여 유효성 검사가 쉽다는 것이다.  
+  유효성 검사가 통과되면 form 객체의 `cleaned_data`라는 멤버에 입력받은 데이터들이 딕셔너리 형태로 저장되어 있다. 이를 모델의 각 데이터에 넣으면 된다.
+
+  ```python
+  def update(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      
+      if request.method == 'POST':
+          
+          article_form = ArticleForm(request.POST)
+          
+          if article_form.is_valid():
+              cleaned_data = article_form.cleaned_data
+              
+              article.title = cleaned_data['title']
+              article.content = cleaned_data['content']
+              
+              article.save()
+              
+              return redirect('articles:detail', article_pk)
+      else:
+          data = {
+              'title': article.title,
+              'content': article.content,
+          }
+          article_form = ArticleForm(data=data)
+      
+      context = {
+          'article': article,
+          'article_form': article_form,
+      }
+      
+      return render(request, 'edit.html', context)
+  ```
+
+  이때 중요한 점은 **페이지를 보여주기 위한 article_form 생성문은 else  문으로 감추어야 한다.** 왜냐하면 form이 is_valid가 False가 나온다면 해당 form에는 오류 메시지가 추가된다. 그래서 이 오류 메시지가 추가된 form을 렌더링 하도록 해야하기 때문에, 깨끗한 form이 이를 뒤집어 쓰지 않도록 else문 안으로 이동해야한다.
+
+  ![image-20200927160847745](README.assets/image-20200927160847745.png)
+
+  유효하지 않은 값의 예로 필드들에 공백들을 집어 넣고 수정 요청을 보내면 위 처럼 에러 메시지와 함께 페이지가 다시 렌더링 된다.
+
+### forms.ModelForm
+
+forms.Form을 상속 받을 때는 필드들을 일일이 정의해야 하지만, 만일 form이 모델을 위한 form일 시에는 forms.ModelForm을 상속받아 Model 클래스를 이용해 이와 정확히 대응되는 form을 쉽게 만들 수 있다.
 
