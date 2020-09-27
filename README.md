@@ -1084,3 +1084,75 @@ Django 에서는 자주 쓰이는 form의 경우 form 클래스를 만들어서 
 
 forms.Form을 상속 받을 때는 필드들을 일일이 정의해야 하지만, 만일 form이 모델을 위한 form일 시에는 forms.ModelForm을 상속받아 Model 클래스를 이용해 이와 정확히 대응되는 form을 쉽게 만들 수 있다.
 
+- forms.py
+
+  ```python
+  from django import forms
+  from .models import Article
+  
+  
+  class ArticleForm(forms.ModelForm):
+  
+      class Meta:
+          model = Article
+          fields = '__all__'
+  
+  ```
+
+  ModelForm을 상속 받는 Form은 Meta 클래스가 필요하다.  
+  `model = Article` 처럼 어떤 모델을 위한 폼인지 정의하고  
+  `fields = '__all__'` 해당 모델의 어느 필드를 입력 받을지 정의한다. `__all__`이면 모든 필드를 입력 받는 것이고, 선택하고자 한다면 `['title', 'content']`이렇게 필드 이름을 담은 리스트(또는 튜플도 가능)로 정의 해준다.
+
+  각 필드의 label을 수정하고 싶다면
+
+  ```python
+  class ArticleForm(forms.ModelForm):
+  
+      class Meta:
+          model = Article
+          fields = '__all__'
+          labels = {
+              'title': '제목',
+              'content': '내용',
+          }
+  ```
+
+  이렇게 `labels` 를 추가하면 된다.
+
+- 이렇게 form 클래스만 ModelForm으로 바꾸어도 잘 작동하지만 ModelForm의 장점은 여기서 끝이 아니다.  
+  ModelForm은 이미 모델의 정보를 담고 있으므로 생성, 유효성 검사, DB수정 등이 더 쉬워진다.
+
+  - 이미 작성된 모델을 담은 채로 렌더링 하고자 한다면 `instance=모델객체`를 생성자에 넘겨준다.
+
+    `article_form = ArticleForm(instance=article)`
+
+  - 입력 받은 데이터로 모델객체를 DB에 저장하고자 한다면 `.save()` 메소드를 호출하여 바로 저장할 수 있다.
+
+    ```python
+    if request.method == 'POST':
+        article_form = ArticleForm(request.POST)
+    
+        if article_form.is_valid():
+            article_form.save()
+            return redirect('articles:index')
+    ```
+
+    만일 저장한 모델 객체를 참조하고 싶다면 `.save()`함수가 그것을 리턴하므로 이를 변수에 담아 사용하면 된다.  
+    `article = article_form.save()`
+
+    **단, update처럼 원래의 모델 객체를 수정해야 한다면 반드시 form을 생성할 때 instance를 넣어서 생성해주어야 해당 객체가 수정된다.  
+    그렇지 않으면 계속 새로운 모델 객체가 생성된다.**
+
+    ```python
+    if request.method == 'POST':
+    
+        article_form = ArticleForm(request.POST, instance=article)
+    
+        if article_form.is_valid():
+            article_form.save()
+    
+            return redirect('articles:detail', article_pk)
+    ```
+
+    
+

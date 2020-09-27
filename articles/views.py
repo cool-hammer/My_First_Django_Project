@@ -9,18 +9,10 @@ from .forms import ArticleForm
 def create(request):
     
     if request.method == 'POST':
-        article = Article()
         article_form = ArticleForm(request.POST)
         
         if article_form.is_valid():
-            
-            cleaned_data = article_form.cleaned_data
-            
-            article.title = cleaned_data['title']
-            article.content = cleaned_data['content']
-            
-            article.save()
-            
+            article_form.save()
             return redirect('articles:index')
     else:
         article_form = ArticleForm()
@@ -56,23 +48,14 @@ def update(request, article_pk):
     
     if request.method == 'POST':
         
-        article_form = ArticleForm(request.POST)
+        article_form = ArticleForm(request.POST, instance=article)
         
         if article_form.is_valid():
-            cleaned_data = article_form.cleaned_data
-            
-            article.title = cleaned_data['title']
-            article.content = cleaned_data['content']
-            
-            article.save()
+            article_form.save()
             
             return redirect('articles:detail', article_pk)
     else:
-        data = {
-            'title': article.title,
-            'content': article.content,
-        }
-        article_form = ArticleForm(data=data)
+        article_form = ArticleForm(instance=article)
     
     context = {
         'article': article,
