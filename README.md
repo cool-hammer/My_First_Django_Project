@@ -1342,6 +1342,47 @@ urlpatterns = []
 - accounts/views.py
 
   ```python
+  from django.contrib.auth import logout as auth_logout
+  
+  def logout(request):
+      auth_logout(request)
+      return redirect('accounts:login')
+  ```
+
+  장고 내장 함수 logout도 내가 작성한 logout 함수와 이름이 겹치지 않도록 `auth_logout`으로 별명으로 import 한다.
+
+  `auth_logout(request)` 형태로 request 객체만 넘겨주면 된다.
+
+  로그아웃 후 로그인 페이지로 리다이렉트 시켰다.
+
+- 로그아웃을 하기위해 base.html에 로그아웃 링크를 만든다.
+
+  ```html
+  <a href="{% url 'logout' %}">로그아웃</a>
+  ```
+
+- 결과
+
+  ![image-20200930031530457](README.assets/image-20200930031530457.png)
+
+### 여러 문제 해결
+
+#### 1) 로그인 유무 구별
+
+![image-20200930031722443](README.assets/image-20200930031722443.png)
+
+사진을 보면 이미 `gkfvl123`이라는 유저로 로그인하고, login url로 이동하면 login 페이지가 보여진다.  
+로그인된 유저가 로그인 페이지로 이동하는 것은 상식적으로 이상하다.
+
+![image-20200930031902818](README.assets/image-20200930031902818.png)
+
+그리고 로그아웃된 유저에게 로그아웃 버튼이 보이는 것도 이상하고, `AnonymousUser`가 보이는 것도 좋지 않다. 로그인되지 않았다면 로그인 링크만 보여야하는 것이 일반적이다.
+
+즉, 로그인 유무에 따라 웹의 응답을 달리해야하고 페이지에 렌더링 될 요소도 달리해야한다.
+
+- 로그인된 유저가 login 페이지 요청을 보낼 때, `/articles/` url로 리다이렉트 시킨다.
+
+  ```python
   
   ```
 

@@ -6,8 +6,11 @@
   <title>Document</title>
 </head>
 <body>
-  <nav>
+  <header>
     <p>{{ request.user }}</p>
+    <a href="{% url 'accounts:logout' %}">로그아웃</a>
+  </header>
+  <nav>
     <a href="{% url 'articles:index' %}">Index Page</a>
     <a href="{% url 'articles:create' %}">New Page</a>
   </nav>

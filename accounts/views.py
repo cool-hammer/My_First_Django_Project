@@ -4,6 +4,7 @@ from django.contrib.auth.forms import (
     AuthenticationForm,
 )
 from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 
 def signup(request):
     if request.method == 'POST':
@@ -37,3 +38,8 @@ def login(request):
     }
     
     return render(request, 'login.html', context)
+
+
+def logout(request):
+    auth_logout(request)
+    return redirect('accounts:login')
