@@ -7,6 +7,7 @@
 </head>
 <body>
   <nav>
+    <p>{{ request.user }}</p>
     <a href="{% url 'articles:index' %}">Index Page</a>
     <a href="{% url 'articles:create' %}">New Page</a>
   </nav>

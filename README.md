@@ -1260,4 +1260,90 @@ urlpatterns = []
 로그인을 위한 폼도 djagno에서 `AuthenticationForm`이라고 제공한다.
 
 - 로그인 url로 `path('login/', views.py, name='login')`을 추가한다.
-- views.py에 login 함수를 정의한다. 
+
+- views.py에 login 함수를 정의한다.  
+  이때, POST 요청은 이때까지의 경우와는 다르다. 로그인을 한다는 것은 DB에 무언가를 새로 저장하는 것이 아니라, 그 계정이 DB에 있는 계정인지 확인하는 것이다. 그러므로 `.save()`메소드를 사용할 필요가 없고, 게다가 AuthenticationFrom에는 애초에 `.save()`메소드가 존재 하지 않는다. 왜냐하면 AuthenticationForm은 forms.ModelForm이 아니라 forms.Form이기 때문이다.
+
+  ```python
+  def login(request):
+      if request.method == 'POST':
+          authentication_form = AuthenticationForm(request, request.POST)
+          
+          if authentication_form.is_valid():
+              return redirect('articles:index')
+      else:
+          authentication_form = AuthenticationForm()
+          
+      context = {
+          'authentication_form': authentication_form
+      }
+      
+      return render(request, 'login.html', context)
+  ```
+
+- 결과
+
+  ![image-20200928003809939](README.assets/image-20200928003809939.png)
+
+  로그인 페이지는 잘 렌더링 된다. 로그인이 잘 되는지 확인해보자, 하지만 지금은 로그인을 해도 로그인이 되었는지 확인할 수단이 없다. 그래서 로그인 시에 해당 계정을 네비게이션에 보이도록 해보자.
+
+  그러기 위해서 base.html의 네비게이션 부분에 `<p>{{ request.user }}</p>`을 추가한다. `request`는 context에 담아서 전해주지 않아도 이미 기본적으로 존재하는 내장객체이다. `request.user`를 통해 현재의 계정을 참조할 수 있다.
+
+  그 후, 로그인 하면,
+
+  ![image-20200928004355533](README.assets/image-20200928004355533.png)
+
+  이렇게 로그인 계정이 아닌 `AnonymousUser`가 표시된다. 이는 인증되지 않은 유저를 뜻하는 것으로 로그인 되지 않은 손님이라는 뜻이다. 결국 로그인은 전혀 이루어지지 않았다는 뜻이다.
+
+  views.py의 login 함수를 보면 유효성 검사는 하고 있지만 로그인을 요청하는 문장은 딱히 없다. 로그인을 하기 위해서는 `django.contrib.auth`모듈에 있는 `login`함수를 사용해야 한다.
+
+  `login(request, user, backend=None)`의 형태로 첫 번째 인자로 request 객체를, 두 번째 위치 인자로 user 객체를 넘겨야 하는데, user 객체는 `AuthenticationForm`의 `.get_user()`메소드로 가져올 수 있다. 이를 이용해 넘기면 된다.
+
+  ```python
+  from django.contrib.auth import login
+  
+  def login(request):
+      if request.method == 'POST':
+          authentication_form = AuthenticationForm(request, request.POST)
+          
+          if authentication_form.is_valid():
+              login(request, authentication_form.get_user()) # 여기에 추가
+              return redirect('articles:index')
+      else:
+          authentication_form = AuthenticationForm()
+          
+      context = {
+          'authentication_form': authentication_form
+      }
+      
+      return render(request, 'login.html', context)
+  ```
+
+  하지만 이렇게 작성할 경우 다음과 같은 에러가 발생한다.  
+  ![image-20200928005436413](README.assets/image-20200928005436413.png)
+
+  이유는 바로 함수 이름이 중복되기 때문이다. 'django.contrib.auth' 모듈의 login 함수를 불러왔지만 우리가 작성한 login 함수도 이름이 똑같다. 그래서 함수의 정의가 덮어 씌어진 것이다. 이를 위해 아래와 같이alias를 사용해 import 할 login 함수의 이름을 `auth_login`으로 바꾼다.
+
+  ```python
+  from django.contrib.auth import login as auth_login
+  ```
+
+  이제 로그인 하면,  
+  ![image-20200928005800318](README.assets/image-20200928005800318.png)
+
+  네비게이션에 로그인한 계정 명이 잘 나오게 된다.
+
+### 로그아웃
+
+로그아웃은 login과 마찬가지로 내장 함수 `logout`를 제공한다. 이를 이용하여 로그아웃을 구현해보자.
+
+- 로그아웃 url로 `path('logout/', views.logout, name='logout')`을 추가
+
+- accounts/views.py
+
+  ```python
+  
+  ```
+
+  
+
