@@ -1365,9 +1365,7 @@ urlpatterns = []
 
   ![image-20200930031530457](README.assets/image-20200930031530457.png)
 
-### 여러 문제 해결
-
-#### 1) 로그인 유무 구별
+### 로그인 여부 구별
 
 ![image-20200930031722443](README.assets/image-20200930031722443.png)
 
@@ -1382,9 +1380,48 @@ urlpatterns = []
 
 - 로그인된 유저가 login 페이지 요청을 보낼 때, `/articles/` url로 리다이렉트 시킨다.
 
+  이를 위해 유저 객체에 있는 `.is_authenticated` 속성을 사용한다. 이는 로그인된 유저(즉, 인증된 유저)라면 `True`, 아니며 `False`를 반환한다.
+
   ```python
-  
+  def login(request):
+      # 이미 로그인 되었다면 인덱스 페이지로 리다이렉트
+      if request.user.is_authenticated:
+          return redirect('articles:index')
+      
+      if request.method == 'POST':
+          authentication_form = AuthenticationForm(request, request.POST)
+          
+          if authentication_form.is_valid():
+              auth_login(request, authentication_form.get_user())
+              return redirect('articles:index')
+      else:
+          authentication_form = AuthenticationForm()
+          
+      context = {
+          'authentication_form': authentication_form
+      }
+      
+      return render(request, 'login.html', context)
   ```
 
-  
+  이제 로그인 상태에서 `/accounts/login/` url로 이동하려고 하면 `/articles/` 페이지로 강제 이동된다.
+
+- 로그아웃 상태에서는 login 버튼만 보이고, 로그인 상태에서는 유저 이름과 로그아웃 버튼만 보이도록 한다.
+
+  html에서도 동일하게 `request.user.is_authenticated`를 사용할 수 있다.
+
+  ```html
+  <header>
+      <!-- 로그인 상태라면 -->
+      {% if request.user.is_authenticated %}
+      <p>{{ request.user }}</p>
+      <a href="{% url 'accounts:logout' %}">로그아웃</a>
+      <!-- 로그아웃 상태라면 -->
+      {% else %}
+      <a href="{% url 'accounts:login' %}">로그인</a>
+      {% endif %}
+  </header>
+  ```
+
+
 

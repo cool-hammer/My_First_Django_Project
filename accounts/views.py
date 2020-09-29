@@ -24,6 +24,9 @@ def signup(request):
 
 
 def login(request):
+    if request.user.is_authenticated:
+        return redirect('articles:index')
+    
     if request.method == 'POST':
         authentication_form = AuthenticationForm(request, request.POST)
         
