@@ -3,6 +3,7 @@
   <h1>Index Page</h1>
   {% for article in articles %}
     <h3><a href="{% url 'articles:detail' article_pk=article.pk %}">{{ article.title }}</a></h3>
+    <p>작성자 : {{ article.user.username }}</p>
     <hr>
   {% endfor %}
 {% endblock content %}

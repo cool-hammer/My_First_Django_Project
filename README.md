@@ -1498,5 +1498,55 @@ Article에 User를 참조할 수 있는 외래키를 만들어보자. 모델에 
 
   ![image-20200930151321487](README.assets/image-20200930151321487.png)
 
+  왜냐하면 article 모델은 user 값이 필요한데 넣어주지 않아서 그렇다. create 뷰 함수 내에서 user를 넣는 로직이 없기 때문이다. 이를 수정해준다.
+
+  ```python
+  def create(request):
   
+      if request.method == 'POST':
+          article_form = ArticleForm(request.POST)
+  
+          if article_form.is_valid():
+              # 여기
+              article = article_form.save(commit=False)
+              article.user = request.user
+              article.save()
+              return redirect('articles:index')
+      else:
+          article_form = ArticleForm()
+  
+      context = {
+          'article_form': article_form,
+      }
+  
+      return render(request, 'edit.html', context)
+  ```
+
+  user 정보를 넣기 위해서 `article_form.save(comit=False)` 처럼 저장 시 `commit=False` 옵션을 준다. 이는 DB에 아직 반영하지 않겠다는 뜻이다.
+
+- 이제 각 글의 작성자를 볼 수 있도록 html을 수정한다.
+
+  ```html
+  <h1>Index Page</h1>
+  {% for article in articles %}
+  <h3><a href="{% url 'articles:detail' article_pk=article.pk %}">{{ article.title }}</a></h3>
+  <p>작성자 : {{ article.user.username }}</p>
+  <hr>
+  {% endfor %}
+  ```
+
+  ![image-20200930152219485](README.assets/image-20200930152219485.png)
+
+- 그래도 아직 문제가 남아있다. 일반적으로 로그인한 사람만이 새 글을 작성할 수 있어야 하고, 자신의 글만 수정 삭제 할 수 있어야한다.  하지만 지금은 로그인 되어 있지 않아도 New 페이지에 들어갈 수 있고(하지만 작성은 안 된다. 왜냐하면, AnonymousUser는 User 모델이 아니기 때문), 다른 유저의 글도 삭제, 수정할 수 있는 상태다.
+
+  - 로그인 되지 않은 상태라면 New 페이지 또는 edit 페이지 요청 시, 로그인 페이지로 리다이렉트 시키도록 다음 코드를 추가한다.
+
+    ```python
+    if not request.user.is_authenticated:
+            return redirect('accounts:login')
+    ```
+
+    일단은 성공인거 같지만 부족한 점이 있다. 로그인 후에는 바로 작성 페이지로 이동 되어야 유저 입장에서 편하다. Django는 이를 위한 기능을 데코레이터로 제공한다.
+
+    
 
