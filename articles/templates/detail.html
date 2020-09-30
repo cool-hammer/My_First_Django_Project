@@ -17,4 +17,18 @@
     <input type="submit" value="삭제">
   </form>
 {% endif %}
+
+<hr>
+<h3>댓글 목록</h3>
+{% for comment in comments %}
+  <p>작성자: {{ comment.user }} 작성일 : {{ comment.created_at }}</p>
+  <p>{{ comment.content }}</p>
+  <hr>
+{% endfor %}
+<h4>댓글 작성</h4>
+<form action="{% url 'articles:comment_create' article.pk %}" method="post">
+  {% csrf_token %}
+  {{ comment_form.as_p }}
+  <input type="submit" value="등록">
+</form>
 {% endblock content %}

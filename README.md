@@ -1606,5 +1606,125 @@ Article에 User를 참조할 수 있는 외래키를 만들어보자. 모델에 
 
 ## 10. 댓글
 
+이제는 글에 댓글을 달 수 있는 기능을 만들어 보자.
 
+### 모델
 
+글과 댓글 사이의 관계는 이렇다. 하나의 글에는 여러 댓글을 달 수 있고, 하나의 댓글은 하나의 글에만 속한다. 따라서 1:N 관계이다.
+
+그리고 유저와 댓글 사이의 관계는 하나의 유저는 여러 댓글을, 하나의 댓글에는 하나의 유저가 존재하므로 이들도 1:N 관계다.
+
+즉, 댓글은 article과 user 두 개의 외래키가 존재한다.
+
+```python
+# articles/models.py
+
+class Comment(models.Model):
+    content = models.CharField(max_length=200)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+```
+
+모델을 새로 만들었다면 `makemigrations`와 `migrate`를 하는 것을 기억하자!
+
+### 폼
+
+```python
+# articles/forms.py
+
+class CommentForm(forms.ModelForm):
+    
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        exclude = ['user', 'article', ]
+        labels = {
+            'content': '내용',
+        }
+```
+
+폼에서 user와 article은 제외 시켜야한다. 안 그러면 댓글을 작성할 때 유저와 글 선택 란이 생기는데 이는 우리가 원하는 모양이 아니다. 댓글을 달 때는 지금 보고 있는 글에 달릴 것이고, 지금 로그인 된 유저의 댓글이 되어야 한다.
+
+### 구현
+
+- articles/urls.py에 댓글 생성 요청 url로 `path('<int:article_pk>/comment_create/', views.comment_create, *name*='comment_create')` 추가
+
+- detail 함수 수정
+
+  ```python
+  def detail(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      comments = article.comment_set.all()
+      comment_form = CommentForm()
+      context = {
+          'article': article,
+          'comments': comments,
+          'comment_form': comment_form,
+      }
+  
+      return render(request, 'detail.html', context)
+  ```
+
+  디테일 페이지에서 해당 글에 작성된 모든 댓글들을 볼 수 있도록 해당 글의 댓글들의 쿼리 셋을 넘겨주어야 하는데, 이는 두 가지 방법이 있다.
+
+  - `comments = Comment.objects.filter(article=article)`
+  - `comments = article.comment_set.all()`
+
+- comment_create 함수
+
+  입력값이 유효하다면 유저와 글 정보를 넣어주고 저장하고, 그렇지 않다면 오류메시지가 들어 있는 폼을 디테일 페이지에서 다시 렌더링 한다.
+
+  ```python
+  def comment_create(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      comment_form = CommentForm(request.POST)
+  
+      if comment_form.is_valid():
+          comment = comment_form.save(commit=False)
+          comment.user = request.user
+          comment.article = article
+          comment.save()
+  
+          return redirect('articles:detail', article_pk)
+  
+      context = {
+          'comment_form': comment_form,
+          'article': article,
+      }
+  
+      return render(request, 'detail.html', context)
+  ```
+
+- comment_create 함수는 POST 요청만 받기 때문에 django 에서 제공하는 `django.views.decorators.http.require_POST` 데코레이터를 붙여준다.
+
+  ```python
+  @require_POST
+  def comment_create(request, article_pk):
+      ...
+  ```
+
+- detail.html
+
+  for 태그를 통해 이미 작성된 댓글들을 보여주고, 밑에 댓글 작성 폼을 렌더링 한다.
+
+  ```html
+  ...
+  <h3>댓글 목록</h3>
+  {% for comment in comments %}
+    <p>작성자: {{ comment.user }} 작성일 : {{ comment.created_at }}</p>
+    <p>{{ comment.content }}</p>
+    <hr>
+  {% endfor %}
+  
+  <h4>댓글 작성</h4>
+  <form action="{% url 'articles:comment_create' article.pk %}" method="post">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <input type="submit" value="등록">
+  </form>
+  ```
+
+- 결과
+
+![image-20201001031356110](README.assets/image-20201001031356110.png)
