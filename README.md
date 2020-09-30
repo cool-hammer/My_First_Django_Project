@@ -1728,3 +1728,38 @@ class CommentForm(forms.ModelForm):
 - 결과
 
 ![image-20201001031356110](README.assets/image-20201001031356110.png)
+
+- 추가로 댓글도 로그인 된 유저만 작성할 수 있도록 수정해보자. 
+
+  - 템플릿에서 로그인 된 유저만 댓글 폼을 볼 수 있도록 수정
+
+    ```html
+    <h4>댓글 작성</h4>
+    {% if request.user.is_authenticated %}
+    <form action="{% url 'articles:comment_create' article.pk %}" method="post">
+      {% csrf_token %}
+      {{ comment_form.as_p }}
+      <input type="submit" value="등록">
+    </form>
+    {% else %}
+    <p>댓글은 로그인 후 작성 가능합니다.</p>
+    {% endif %}
+    ```
+
+  - comment_create 뷰 함수에 `login_required` 데코레이터 추가
+
+- 댓글이 없을 때는 '댓글이 아직 없어요' 라는 메시지가 출력되도록 한다.
+
+  ```html
+  <h3>댓글 목록</h3>
+  {% for comment in comments %}
+    <p>작성자: {{ comment.user }} 작성일 : {{ comment.created_at }}</p>
+    <p>{{ comment.content }}</p>
+    <hr>
+  {% empty %}
+    <p>댓글이 아직 없어요 :(</p>
+  {% endfor %}
+  ```
+
+  
+
