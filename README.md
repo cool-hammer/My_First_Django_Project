@@ -1423,5 +1423,47 @@ urlpatterns = []
   </header>
   ```
 
+## 9. article과 account 결합
 
+이제 article 앱에 account의 기능을 추가해보자.  
+즉, 게시글에 작성자(유저)를 추가해보자.
+
+### 1:N 데이터베이스
+
+작성자와 게시글 간에는 `1:N 관계`가 성립한다. 즉, 한 명의 작성자는 여러 게시글을 가지지만, 하나의 게시글은 단 한 명의 작성자만 존재한다.
+
+Article에 User를 참조할 수 있는 외래키를 만들어보자. 모델에 이러한 외래키를 추가할 수 있도록 `models.ForeignKey(to, on_delete, ...)`라는 필드가 존재한다.  
+필수인자가 2개가 존재하는데, `to`는 참조하고자 하는 모델(즉, 여기서는 User 모델)이고, `on_delete`는 참조 대상이 삭제되었을 때 어떻게 처리할 것인가를 설정하는 속성이다.
+
+여기서는 유저가 삭제되면, 해당 유저의 글도 삭제되도록 `on_delete=models.CASCADE`로 설정할 것이다.
+
+- accounts/model.py
+
+  ```python
+  from django.db import models
+  from django.contrib.auth import get_user_model
+  
+  class Article(models.Model):
+      title = models.CharField(max_length=50)
+      content = models.TextField()
+      created_at = models.DateTimeField(auto_now_add=True)
+      modified_at = models.DateTimeField(auto_now=True)
+      # 유저 외래키
+      user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+  ```
+
+  여기서 User 모델 클래스를 가져올 때는 `django.contrib.auth.get_user_model`함수를 이용한다. 이는 현재 프로젝트에서 쓰이고 있는 User 모델 클래스를 반환해준다.
+
+  이제 Article 모델의 스키마가 변했다. 이렇게 모델의 스키마에 변화가 생기면 `makemigrations`와 `migrate`를 수행해주어야 한다.
+
+  이때, `makemigrations` 수행 시, 다음과 같은 안내가 나온다.  
+  ![image-20200930035312628](README.assets/image-20200930035312628.png)  
+  이 문구가 나오는 이유는 기존에 이미 생성되어 있던 유저 정보가 없는 Article 데이터가 있는데 user 컬럼을 만들려고 해서 생기는 문제이다. 만일 user 컬럼이 nullable이라면 상관이 없지만, django에서 필드들은 기본적을 not null이다.  
+  두 가지 선택사항이 주어지는데 `1)`은 지금 바로 그 Article 데이터에 user 정보를 넣는 것이고 `2)`은 명령 수행을 취소하고 돌아가서 직접 models.py에 user필드의 default 값을 설정한다는 뜻이다.  
+  여기서 `1)`을 선택하고 기존에 만든 유저의 아무 id를 넣도록 한다. 테이블의 외래키에는 참조 대상의 id(primary key)를 저장하기 때문에 id를 쓰면된다.  
+  ![image-20200930040056002](README.assets/image-20200930040056002.png)  
+  기존 글의 user는 전부 id=1인 유저를 넣었다. 이렇게되면 성공적으로 migrations가 생성되고 migrate도 문제없이 진행된다.  
+  ![image-20200930040301195](README.assets/image-20200930040301195.png)  
+  그 후 article 테이블을 보면 `user_id`라는 컬럼이 생기고 모두 1이라는 값이 들어가 있는 것을 볼 수 있다.  
+  ![image-20200930040349808](README.assets/image-20200930040349808.png)
 
