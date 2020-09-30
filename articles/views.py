@@ -51,11 +51,12 @@ def detail(request, article_pk):
 
 @login_required
 def update(request, article_pk):
-    # if not request.user.is_authenticated:
-    #     return redirect('accounts:login')
 
     article = Article.objects.get(pk=article_pk)
 
+    if article.user != request.user:
+        return redirect('articles:detail', article_pk)
+    
     if request.method == 'POST':
 
         article_form = ArticleForm(request.POST, instance=article)
@@ -76,6 +77,11 @@ def update(request, article_pk):
 
 
 def delete(request, article_pk):
+    
     article = Article.objects.get(pk=article_pk)
+    
+    if article.user != request.user:
+        return redirect('articles:detail', article_pk)
+    
     article.delete()
     return redirect('articles:index')

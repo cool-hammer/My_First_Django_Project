@@ -1585,3 +1585,26 @@ Article에 User를 참조할 수 있는 외래키를 만들어보자. 모델에 
 
   - 이제 다른 유저의 글을 수정 및 삭제 할 수 없도록 버튼을 감추자.
 
+    ```html
+    {% if request.user == article.user %}
+      <a href="{% url 'articles:update' article_pk=article.pk %}">수정</a>
+      <form action="{% url 'articles:delete' article_pk=article.pk %}" method="post">
+        {% csrf_token %}
+        <input type="submit" value="삭제">
+      </form>
+    {% endif %}
+    ```
+
+    뷰함수에도 막을 수 있도록 다음 로직을 추가한다.
+
+    ```python
+    if article.user != request.user:
+            return redirect('articles:detail', article_pk)
+    ```
+
+    이제는 유저가 다른 유저의 글을 수정하고 삭제하는 것은 불가능하다.
+
+## 10. 댓글
+
+
+
