@@ -3,13 +3,14 @@ from django.shortcuts import (
 )
 from .models import Article
 from .forms import ArticleForm
-# Create your views here.
+from django.contrib.auth.decorators import login_required
 
 
+@login_required
 def create(request):
-    if not request.user.is_authenticated:
-        return redirect('accounts:login')
-    
+    # if not request.user.is_authenticated:
+    #     return redirect('accounts:login')
+
     if request.method == 'POST':
         article_form = ArticleForm(request.POST)
 
@@ -48,10 +49,11 @@ def detail(request, article_pk):
     return render(request, 'detail.html', context)
 
 
+@login_required
 def update(request, article_pk):
-    if not request.user.is_authenticated:
-        return redirect('accounts:login')
-    
+    # if not request.user.is_authenticated:
+    #     return redirect('accounts:login')
+
     article = Article.objects.get(pk=article_pk)
 
     if request.method == 'POST':

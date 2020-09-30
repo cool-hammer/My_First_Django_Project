@@ -1546,7 +1546,42 @@ Article에 User를 참조할 수 있는 외래키를 만들어보자. 모델에 
             return redirect('accounts:login')
     ```
 
-    일단은 성공인거 같지만 부족한 점이 있다. 로그인 후에는 바로 작성 페이지로 이동 되어야 유저 입장에서 편하다. Django는 이를 위한 기능을 데코레이터로 제공한다.
+    일단은 성공인거 같지만 부족한 점이 있다. 로그인 후에는 바로 작성 페이지로 이동 되어야 유저 입장에서 편하다. Django는 이를 위한 기능을 `login_required`데코레이터로 제공한다.
 
+    ```python
+    from django.contrib.auth.decorators import login_required
     
+    @login_required
+    def create(request):
+        # if not request.user.is_authenticated:
+        #     return redirect('accounts:login')
+        
+        if request.method == 'POST':
+            article_form = ArticleForm(request.POST)
+    
+            if article_form.is_valid():
+                article = article_form.save(commit=False)
+                article.user = request.user
+                article.save()
+                return redirect('articles:index')
+        else:
+            article_form = ArticleForm()
+    
+        context = {
+            'article_form': article_form,
+        }
+    
+        return render(request, 'edit.html', context)
+    ```
+
+    이 후 로그인 페이지로 리다이렉트 되었을 때, `/accounts/login/?next=/articles/create/`처럼 url에 next라는 이름의 파라미터가 붙고, 그 값은 로그인 후 돌아가야할 url을 가지고 있다.  
+    하지만 아직은 로그인 해도 next의 url로 돌아가지는 않는다. 이를 위해 login 뷰 함수에서 로그인 성공시 리다이렉트를 다음과 같이 수정한다.
+
+    ```python
+    return redirect(request.GET.get('next') or 'articles:index')
+    ```
+
+    이렇게 수정시 next url이 있다면 그곳이 우선이 되고, 만약에 없다면 인덱스 페이지로 간다.
+
+  - 이제 다른 유저의 글을 수정 및 삭제 할 수 없도록 버튼을 감추자.
 
