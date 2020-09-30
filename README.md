@@ -1466,4 +1466,37 @@ Article에 User를 참조할 수 있는 외래키를 만들어보자. 모델에 
   ![image-20200930040301195](README.assets/image-20200930040301195.png)  
   그 후 article 테이블을 보면 `user_id`라는 컬럼이 생기고 모두 1이라는 값이 들어가 있는 것을 볼 수 있다.  
   ![image-20200930040349808](README.assets/image-20200930040349808.png)
+  
+- article 테이블에 원하는 대로 user 필드가 생겼지만, 원치 않은 문제가 발생했다. 글 작성과 수정 폼에서 user 선택 란이 생긴다.  
+  ![image-20200930150837929](README.assets/image-20200930150837929.png)
+
+  보통 글을 작성하면 현재 로그인 된 유저가 작성자가 되는 것이 일반적이다. 따라서 이렇게 유저를 정하는 란이 생기면 안 된다. 이를 수정하기 위해서는 form 클래스를 고쳐야 한다.
+
+  ```python
+  # articles/forms.py
+  
+  from django import forms
+  from .models import Article
+  
+  
+  class ArticleForm(forms.ModelForm):
+  
+      class Meta:
+          model = Article
+          fields = '__all__'
+          exclude = ['user', ]
+          labels = {
+              'title': '제목',
+              'content': '내용',
+          }
+  
+  ```
+
+  폼에서 제외하고 싶은 필드가 있다면 Meta 클래스에 `exclude`를 추가하면 된다. exclude에 제외하고 싶은 필드 명을 리스트로 정의하면 해당 필드들은 폼에 나타나지 않는다.
+
+- 하지만 아직 문제가 남아있다. 글을 작성하면 다음 이미지처럼 `NOT NULL constraint failed: articles_article.user_id` 라는 예외가 발생한다.
+
+  ![image-20200930151321487](README.assets/image-20200930151321487.png)
+
+  
 
