@@ -3,6 +3,8 @@
 {% block content %}
 <h1>Detail Page</h1>
 <hr>
+
+<!-- 글 -->
 <h3>제목 : {{ article.title }}</h3>
 <p>작성자 : {{ article.user.username }}</p>
 <p>내용 : {{ article.content }}</p>
@@ -18,15 +20,39 @@
   </form>
 {% endif %}
 
+<!-- 좋아요 -->
+<p>{{ article.like_users.all|length }}명이 이 글을 좋아합니다.</p>
+<form action="{% url 'articles:article_like' article.pk %}" method="post">
+  {% csrf_token %}
+  {% if request.user in article.like_users.all %}
+  <input type="submit" value="좋아요 취소">
+  {% else %}
+  <input type="submit" value="좋아요">
+  {% endif %}
+</form>
+
+<!-- 댓글 -->
 <hr>
 <h3>댓글 목록</h3>
 {% for comment in comments %}
   <p>작성자: {{ comment.user }} 작성일 : {{ comment.created_at }}</p>
   <p>{{ comment.content }}</p>
+  <!-- 좋아요 -->
+  <p>{{ comment.like_users.all|length }}명이 이 댓글을 좋아합니다.</p>
+  <form action="{% url 'articles:comment_like' article.pk comment.pk%}" method="post">
+    {% csrf_token %}
+    {% if request.user in comment.like_users.all %}
+    <input type="submit" value="좋아요 취소">
+    {% else %}
+    <input type="submit" value="좋아요">
+    {% endif %}
+  </form>
+
   <hr>
 {% empty %}
   <p>댓글이 아직 없어요 :(</p>
 {% endfor %}
+
 <h4>댓글 작성</h4>
 {% if request.user.is_authenticated %}
 <form action="{% url 'articles:comment_create' article.pk %}" method="post">

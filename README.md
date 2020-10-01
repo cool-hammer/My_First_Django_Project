@@ -1761,5 +1761,159 @@ class CommentForm(forms.ModelForm):
   {% endfor %}
   ```
 
-  
+
+## 11. 좋아요
+
+사용자가 글과 댓글에 좋아요를 달 수 있도록 해보자.
+
+### M:N 관계
+
+사용자는 여러 글과 댓글에 좋아요를 남길 수 있고, 글과 댓글은 여러 사용자에게 좋아요를 받을 수 있다. 이러한 관계는 M:N 관계로 1:N 관계와는 달라서 ForeignKey 필드를 사용할 수 없다. M:N 관계의 경우 `ManyToManyField`를 사용한다.
+
+### 모델 수정
+
+```python
+from django.db import models
+from django.contrib.auth import get_user_model
+
+class Article(models.Model):
+    title = models.CharField(max_length=50)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    # 좋아요 한 유저
+    like_users = models.ManyToManyField(get_user_model(), related_name='like_articles')
+    
+
+class Comment(models.Model):
+    content = models.CharField(max_length=200)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # 좋아요 한 유저
+    like_users = models.ManyToManyField(get_user_model(), related_name='like_comments')
+```
+
+이 경우에 `related_name`이 중요하다. related_name은 상대 모델에서 자기 모델을 참조할 수 있게 도와주는 매니저의 이름이다. 즉, user라는 유저 객체 입장에서 user가 작성한 모든 글을 참조하고 싶을 때는 `user.article_set`이라는 이름의 매니저를 사용한다. related_name을 정하지 않을 때는 이처럼 `상대모델_set`이라는 이름의 매니저가 생긴다.  
+그런데 Article 모델과 Comment 모델은 User 모델과 2가지 관계를 가진다. 작성자와 좋아요 유저. 그렇기 때문에 어느 한 개를 related_name을 지정해주지 않으면 둘 다 `.article_set` 또는 `.comment_set`이라는 매니저 이름을 써버리기 때문에 중복으로 인한 오류가 생긴다. 따라서 하나는 반드시 related_name을 지정해주어야 한다.
+
+1:N 관계에서는 기존의 article 테이블에 user_id라는 컬럼이 새로 생기지만, N:M
+
+![image-20201001135612913](README.assets/image-20201001135612913.png)
+
+![image-20201001135633792](README.assets/image-20201001135633792.png)
+
+### 폼 수정
+
+폼에서 `like_users`를 제외해주지 않으면 입력 폼에서 `like_users` 선택란이 나올 것이므로 exclude에 like_users를 추가해준다.
+
+```python
+# articles/forms.py
+
+class ArticleForm(forms.ModelForm):
+
+    class Meta:
+        model = Article
+        fields = '__all__'
+        exclude = ['user', 'like_users']
+        labels = {
+            'title': '제목',
+            'content': '내용',
+        }
+
+
+class CommentForm(forms.ModelForm):
+    
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        exclude = ['user', 'article', 'like_users']
+        labels = {
+            'content': '내용',
+        }
+```
+
+### 구현
+
+- url
+
+  글 좋아요 요청과 댓글 좋아요 요청을 할 url을 추가한다.
+
+  ```python
+  path('<int:article_pk>/article_like/', views.article_like, name='article_like'),
+  path('<int:article_pk>/comment_like/<int:comment_pk>/', views.comment_like, name='comment_like'),
+  ```
+
+- articles/views.py
+
+  ```python
+  @require_POST
+  @login_required
+  def article_like(request, article_pk):
+      article = Article.objects.get(pk=article_pk)
+      
+      if request.user in article.like_users.all():
+          article.like_users.remove(request.user)
+      else:
+          article.like_users.add(request.user)
+      
+      return redirect('articles:detail', article_pk)
+  ```
+
+  ```python
+  @require_POST
+  @login_required
+  def comment_like(request, article_pk, comment_pk):
+      comment = Comment.objects.get(pk=comment_pk)
+      
+      if request.user in comment.like_users.all():
+          comment.like_users.remove(request.user)
+      else:
+          comment.like_users.add(request.user)
+      
+      return redirect('articles:detail', article_pk)
+  ```
+
+  둘 다 POST 요청만 받기 때문에 `@require_POST`, 로그인 후 가능하기 때문에 `@login_required` 추가
+
+  해당 글, 댓글에 내가 좋아요 했는지 확인하기 위해서 `request.user in comment.like_users.all()` 문장으로 확인.
+
+  사실 더 좋은 방식은 `comment.like_users.filter(pk=request.user.pk).exits()`처럼 exists() 메소드를 이용하는 것이 DB효율성 면에서 더 좋다.
+
+- detail.html
+
+  - 글 좋아요
+
+    ```html
+    <!-- 좋아요 -->
+    <p>{{ article.like_users.all|length }}명이 이 글을 좋아합니다.</p>
+    <form action="{% url 'articles:article_like' article.pk %}" method="post">
+      {% csrf_token %}
+      {% if request.user in article.like_users.all %}
+      <input type="submit" value="좋아요 취소">
+      {% else %}
+      <input type="submit" value="좋아요">
+      {% endif %}
+    </form>
+    ```
+
+  - 댓글 좋아요
+
+    ```python
+    <!-- 좋아요 -->
+      <p>{{ comment.like_users.all|length }}명이 이 댓글을 좋아합니다.</p>
+      <form action="{% url 'articles:comment_like' article.pk comment.pk%}" method="post">
+        {% csrf_token %}
+        {% if request.user in comment.like_users.all %}
+        <input type="submit" value="좋아요 취소">
+        {% else %}
+        <input type="submit" value="좋아요">
+        {% endif %}
+      </form>
+    ```
+
+## 12. 프로필과 팔로우
+
+
 

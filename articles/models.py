@@ -7,6 +7,7 @@ class Article(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    like_users = models.ManyToManyField(get_user_model(), related_name='like_articles')
     
 
 class Comment(models.Model):
@@ -14,3 +15,4 @@ class Comment(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    like_users = models.ManyToManyField(get_user_model(), related_name='like_comments')
