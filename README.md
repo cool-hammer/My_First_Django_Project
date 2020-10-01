@@ -1798,7 +1798,7 @@ class Comment(models.Model):
 이 경우에 `related_name`이 중요하다. related_name은 상대 모델에서 자기 모델을 참조할 수 있게 도와주는 매니저의 이름이다. 즉, user라는 유저 객체 입장에서 user가 작성한 모든 글을 참조하고 싶을 때는 `user.article_set`이라는 이름의 매니저를 사용한다. related_name을 정하지 않을 때는 이처럼 `상대모델_set`이라는 이름의 매니저가 생긴다.  
 그런데 Article 모델과 Comment 모델은 User 모델과 2가지 관계를 가진다. 작성자와 좋아요 유저. 그렇기 때문에 어느 한 개를 related_name을 지정해주지 않으면 둘 다 `.article_set` 또는 `.comment_set`이라는 매니저 이름을 써버리기 때문에 중복으로 인한 오류가 생긴다. 따라서 하나는 반드시 related_name을 지정해주어야 한다.
 
-1:N 관계에서는 기존의 article 테이블에 user_id라는 컬럼이 새로 생기지만, N:M
+1:N 관계에서는 기존의 article 테이블에 user_id라는 컬럼이 새로 생기지만, N:M 관계는 중계 테이블이라는 테이블이 하나 생겨나고 여기에 두 모델의 id 컬럼이 생긴다. 즉, 원래 모델의 테이블에는 변화가 없다. 중계 테이블의 이름은 `앱이름_모델_필드명`이 되고, 컬럼 이름들은 각각의 `모델_id`가 된다.
 
 ![image-20201001135612913](README.assets/image-20201001135612913.png)
 
@@ -1915,5 +1915,105 @@ class CommentForm(forms.ModelForm):
 
 ## 12. 프로필과 팔로우
 
+### 1) 프로필 페이지
 
+- accounts/urls.py에 `path('<username>/', views.profile, name='profile')` 추가
+
+- accounts/views.py
+
+  ```python
+  def profile(request, username):
+      person = get_user_model().objects.get(username=username)
+      
+      context = {
+          'person': person,
+      }
+      
+      return render(request, 'profile.html', context)
+  ```
+
+- profile.html
+
+  ```html
+  {% extends 'base.html' %}
+  {% block content %}
+  <h1>{{ person.username }} 님의 프로필</h1>
+  
+  <hr>
+  
+  <h3>{{ person.username }} 님이 작성한 글</h3>
+  
+  <ul>
+  {% for article in person.article_set.all %}
+    <li>
+      <a href="{% url 'articles:detail' article.pk %}">{{ article.title }}</a>
+    </li>
+  {% endfor %}
+  </ul>
+  
+  {% endblock content %}
+  ```
+
+- 결과
+
+  ![image-20201001172133620](README.assets/image-20201001172133620.png)
+
+### 2) 커스텀 유저
+
+팔로우의 관계는 유저와 유저 간의 관계다. 한 명의 유저는 여러 유저를 팔로우 할 수 있고, 또한 한 명의 유저는 여러 유저에게 팔로우 받을 수 있다. 이 역시 N:M 관계이다. 그러면 유저 모델에 ManyToMany 필드를 추가해야 하는데, 우리는 아직 User 모델을 직접 만든 적이 없다. 이때까지 장고가 기본적으로 제공하는 유저모델을 사용하였다. 이제는 유저모델도 커스터마이징 해야할 때가 왔다.
+
+- models.py
+
+  ```python
+  from django.db import models
+  from django.contrib.auth.models import AbstractUser
+  
+  
+  class User(AbstractUser):
+      follows = models.ManyToManyField('self', related_name='followings', symmetrical=False)
+  ```
+
+  커스텀 유저 모델은 `django.contrib.auth.models.AbstractUser` 클래스를 상속받아 정의한다. 이러면 기본적으로 갖고 있는 유저 모델의 기능들을 모두 사용할 수 있다.
+
+  그리고 팔로우하는 유저를 저장할 `follow`필드를 ManyToMany 필드로 정의한다.
+
+  이제 새로운 User 모델이 생겼으니 `makemigrations`를 해야한다. 하지만 다음과 같은 에러가 발생한다.  
+  ![image-20201001173317047](README.assets/image-20201001173317047.png)
+
+  프로젝트에서 유저 모델을 새로 정의하면 그 모델을 프로젝트의 유저 모델로 사용하겠다고 프로젝트에 알려주어야 한다.  
+  settings.py에 다음 문장을 넣어주면 된다.
+
+  ```python
+  AUTH_USER_MODEL = 'accounts.User'
+  ```
+
+  이제 프로젝트의 유저 모델은 accounts 앱의 User라는 모델을 사용하겠다는 뜻이다.
+
+  그러면 성공적으로 `makemigrations`가 된다. 하지만 `migrate`는 되지 않는다. 왜냐하면 이미 여러 테이블에서 이전 유저 모델을 사용하고 있기 때문에 그것을 대체할 수 없기 때문이다.
+
+  이는 프로젝트에서 매우 심각한 문제이다. 그래서 Django 공식 문서에서도 프로젝트 추후에 유저를 커스텀할 것을 대비해 프로젝트 시작 시에 비어있는(?) 커스텀 유저 모델을 미리 만들어 둘 것을 강력히 권고하고 있다.[(해당 링크)](https://docs.djangoproject.com/en/3.1/topics/auth/customizing/#using-a-custom-user-model-when-starting-a-project)
+
+- DB 초기화
+
+  이미 이전 유저 모델이 많은 곳에 쓰였기 때문에 어쩔 수 없이 DB를 초기화 해야한다.  
+  DB를 초기화 하기 위해서는 `db.sqlite3` 파일과 각 앱의 migrations 폴더 안의 `__init__.py`를 제외하고 모두 삭제해야 한다.
+
+  이렇게 초기화 후에는 migrate도 정상적으로 작동 된다.
+
+- 하지만 커스텀 유저로 바뀐 뒤 회원 가입이 작동하지 않는다. 왜냐하면 회원가입에 사용하는 `UserCreationForm`의 경우 기존 default 유저 모델인 `auth.User`를 모델로 만들어진 모델 폼이기 때문이다. 그러므로 회원가입 폼도 커스텀해주어야 한다.
+
+  ```python
+  from django.contrib.auth.forms import UserCreationForm
+  from django.contrib.auth import get_user_model
+  
+  class CustomUserCreationForm(UserCreationForm):
+      
+      class Meta(UserCreationForm.Meta):
+          model = get_user_model()
+          fields = UserCreationForm.Meta.fields
+  ```
+
+  사실 참고하는 모델을 우리가 만든 `accounts.User`로만 바꾸어 주면 되기 때문에 나머지는내용은 기존의 `UserCreationForm`의 것을 그대로 가져다 놓으면 된다. 만일 작성 필드를 추가하고 싶다면 `fiedls = UserCreationForm.Meta.fields + ['email']` 처럼 뒤에 리스트를 추가해주면된다. 기본적인 필드에 무엇이 있는지 알고 싶다면 [여기](https://docs.djangoproject.com/en/3.1/ref/contrib/auth/#fields)를 참고하자.
+
+  이제 login 뷰 함수에서 폼 클래스를 `UserCreationForm`에서 `CustomUserCreationForm`으로 바꾸어주면 된다.
 
