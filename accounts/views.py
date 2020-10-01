@@ -10,10 +10,11 @@ from django.contrib.auth import (
 )
 from .forms import CustomUserCreationForm
 
+
 def signup(request):
     if request.user.is_authenticated:
         return redirect('articles:index')
-    
+
     if request.method == 'POST':
         user_creation_form = CustomUserCreationForm(request.POST)
 
@@ -58,9 +59,22 @@ def logout(request):
 
 def profile(request, username):
     person = get_user_model().objects.get(username=username)
-    
+
     context = {
         'person': person,
     }
-    
+
     return render(request, 'profile.html', context)
+
+
+def follow(request, username):
+    you = get_user_model().objects.get(username=username)
+    me = request.user
+
+    if me != you:
+        if me in you.followers.all():
+            you.followers.remove(me)
+        else:
+            you.followers.add(me)
+
+    return redirect('accounts:profile', username)

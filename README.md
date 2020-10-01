@@ -1970,12 +1970,14 @@ class CommentForm(forms.ModelForm):
   
   
   class User(AbstractUser):
-      follows = models.ManyToManyField('self', related_name='followings', symmetrical=False)
+      follows = models.ManyToManyField('self', related_name='followers', symmetrical=False)
   ```
 
   커스텀 유저 모델은 `django.contrib.auth.models.AbstractUser` 클래스를 상속받아 정의한다. 이러면 기본적으로 갖고 있는 유저 모델의 기능들을 모두 사용할 수 있다.
 
   그리고 팔로우하는 유저를 저장할 `follow`필드를 ManyToMany 필드로 정의한다.
+
+  이 때, `symmetrical` 속성은 False로 한다. `symmetrical`  속성은 대칭성을 의미하는데, 예를 들어, 친구 관계 같은 것이다. A가 B의 친구이면 B도 A의 친구가 된다. 하지만 여기서 팔로우의 관계는 A가 B를 팔로우 하더라도 무조건 B가 A를 팔로우 하는 것은 아니기 때문에 대칭성이 없어야 한다.
 
   이제 새로운 User 모델이 생겼으니 `makemigrations`를 해야한다. 하지만 다음과 같은 에러가 발생한다.  
   ![image-20201001173317047](README.assets/image-20201001173317047.png)
@@ -2017,3 +2019,45 @@ class CommentForm(forms.ModelForm):
 
   이제 login 뷰 함수에서 폼 클래스를 `UserCreationForm`에서 `CustomUserCreationForm`으로 바꾸어주면 된다.
 
+### 3) 팔로우
+
+- 팔로우 요청 url : `path('<username>/follow/', views.follow, name='follow')`
+
+- follow 뷰 함수
+
+  ```python
+  # accounts/views.py
+  
+  def follow(request, username):
+      you = get_user_model().objects.get(username=username)
+      me = request.user
+  	
+      if me != you:
+          if me in you.followers.all():
+              you.followers.remove(me)
+          else:
+              you.followers.add(me)
+  
+      return redirect('accounts:profile', username)
+  ```
+
+  자기 자신을 팔로우 할 수 없으므로 로그인 된 유저(me)와 팔로우 할 대상 유저(you)와 다른지 먼저 확인 해야한다.
+
+- profile.html
+
+  ```html
+  {% if request.user != person %}
+  <form action="{% url 'accounts:follow' person.username %}" method="post">
+    {% csrf_token %}
+    {% if request.user in person.followers.all %}
+    <input type="submit" value="팔로우 취소">
+    {% else %}
+    <input type="submit" value="팔로우">
+    {% endif %}
+  </form>
+  {% endif %}
+  ```
+
+- 결과
+
+  ![image-20201002000506886](README.assets/image-20201002000506886.png)

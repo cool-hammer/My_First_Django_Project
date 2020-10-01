@@ -1,17 +1,30 @@
-{% extends 'base.html' %}
-{% block content %}
+{% extends 'base.html' %} {% block content %}
 <h1>{{ person.username }} 님의 프로필</h1>
+<hr />
+
+<p>팔로잉 : {{ person.follows.all|length }}</p>
+<p>팔로워 : {{ person.followers.all|length }}</p>
+
+{% if request.user != person %}
+<form action="{% url 'accounts:follow' person.username %}" method="post">
+  {% csrf_token %}
+  {% if request.user in person.followers.all %}
+  <input type="submit" value="팔로우 취소">
+  {% else %}
+  <input type="submit" value="팔로우">
+  {% endif %}
+</form>
+{% endif %}
 
 <hr>
 
 <h3>{{ person.username }} 님이 작성한 글</h3>
-
 <ul>
-{% for article in person.article_set.all %}
+  {% for article in person.article_set.all %}
   <li>
     <a href="{% url 'articles:detail' article.pk %}">{{ article.title }}</a>
   </li>
-{% endfor %}
+  {% endfor %}
 </ul>
 
 {% endblock content %}
